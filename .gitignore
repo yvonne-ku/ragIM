@@ -1,0 +1,71 @@
+# --- Python 通用忽略 ---
+# 字节码文件
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 编译文件
+*.so
+*.pyd
+*.dll
+
+# 测试覆盖率
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+.coverage.*
+*.cover
+*.py,cover
+
+# 打包文件
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 环境变量文件（包含敏感密钥）
+.env
+.env.local
+.env.*.local
+
+# --- 数据与向量存储（RAG 特有） ---
+# 原始文档目录（避免提交大文件）
+data/
+
+# 向量数据库持久化目录（如 Chroma、FAISS 索引）
+vector_store/
+*.faiss
+*.index
+chroma.sqlite3
+*.db
+*.db3
+
+# 本地模型文件（如果下载到项目中）
+models/
+*.bin
+*.ckpt
+*.safetensors
+
+# 日志文件
+*.log
+logs/
+
+# 其他临时文件
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# 如果使用 Jupyter 检查点
+.ipynb_checkpoints/
+
+# 参考文件
+参考.py
