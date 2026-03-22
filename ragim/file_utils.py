@@ -82,9 +82,9 @@ class StaticLoaderTools:
                 "RapidOCRDocLoader",
                 "RapidOCRPPTLoader",
             ]:
-                # 1. 如果是 OCR，使用 chatchat 项目对 RapidOCR 库的封装 Loader，已经放在自己的项目里了
+                # 1. 如果是 OCR，使用 ragim.ocr_loader
                 document_loaders_module = importlib.import_module(
-                    "ragim.server.file_rag.document_loaders"
+                    "ragim.ocr_loader"
                 )
             else:
                 # 2. 如果是普通文件 Loader，直接使用 langchain
