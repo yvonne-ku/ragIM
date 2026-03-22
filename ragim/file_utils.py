@@ -37,18 +37,32 @@ class StaticLoaderTools:
     Loader 字典
     """
     LOADER_DICT = {
+       "UnstructuredHTMLLoader": [".html", ".htm"],
+        "MHTMLLoader": [".mhtml"],
         "TextLoader": [".md"],
+        "UnstructuredMarkdownLoader": [".md"],
         "JSONLoader": [".json"],
         "JSONLinesLoader": [".jsonl"],
         "CSVLoader": [".csv"],
-
+        # "FilteredCSVLoader": [".csv"], 如果使用自定义分割csv
         "RapidOCRPDFLoader": [".pdf"],
         "RapidOCRDocLoader": [".docx"],
-        "RapidOCRPPTLoader": [".ppt", ".pptx"],
+        "RapidOCRPPTLoader": [
+            ".ppt",
+            ".pptx",
+        ],
         "RapidOCRLoader": [".png", ".jpg", ".jpeg", ".bmp"],
-
-        "UnstructuredHTMLLoader": [".html", ".htm"],
-        "UnstructuredMarkdownLoader": [".md"],
+        "UnstructuredFileLoader": [
+            ".eml",
+            ".msg",
+            ".rst",
+            ".rtf",
+            ".txt",
+            ".xml",
+            ".epub",
+            ".odt",
+            ".tsv",
+        ],
         "UnstructuredEmailLoader": [".eml", ".msg"],
         "UnstructuredEPubLoader": [".epub"],
         "UnstructuredExcelLoader": [".xlsx", ".xls", ".xlsd"],
@@ -63,6 +77,7 @@ class StaticLoaderTools:
         "UnstructuredWordDocumentLoader": [".docx"],
         "UnstructuredXMLLoader": [".xml"],
         "UnstructuredPowerPointLoader": [".ppt", ".pptx"],
+        "EverNoteLoader": [".enex"],
     }
     SUPPORTED_EXTS = [ext for sublist in LOADER_DICT.values() for ext in sublist]
 
@@ -95,11 +110,14 @@ class StaticLoaderTools:
         except Exception as e:
             msg = f"为文件{file_path}查找加载器{loader_name}时出错：{e}"
             logger.error(f"{e.__class__.__name__}: {msg}")
+            
+            # 3. 加载出错时使用 langchain 的 UnstructuredFileLoader
             document_loaders_module = importlib.import_module(
                 "langchain_community.document_loaders"
             )
             DocumentLoader = getattr(document_loaders_module, "UnstructuredFileLoader")
 
+        # 为不同的 Loader 设置参数
         if loader_name == "UnstructuredFileLoader":
             loader_kwargs.setdefault("autodetect_encoding", True)
         elif loader_name == "CSVLoader":
@@ -110,7 +128,6 @@ class StaticLoaderTools:
                 if encode_detect is None:
                     encode_detect = {"encoding": "utf-8"}
                 loader_kwargs["encoding"] = encode_detect["encoding"]
-
         elif loader_name == "JSONLoader":
             loader_kwargs.setdefault("jq_schema", ".")
             loader_kwargs.setdefault("text_content", False)
@@ -118,6 +135,7 @@ class StaticLoaderTools:
             loader_kwargs.setdefault("jq_schema", ".")
             loader_kwargs.setdefault("text_content", False)
 
+        # 创建 Loader 实例
         loader = DocumentLoader(file_path, **loader_kwargs)
         return loader
 
@@ -187,6 +205,7 @@ class KnowledgeFile:
             )
             if isinstance(loader, TextLoader):
                 loader.encoding = "utf8"
+            # 使用 Loader 加载文件
             self.docs = loader.load()
         return self.docs
 
