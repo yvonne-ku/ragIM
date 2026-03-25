@@ -1,43 +1,26 @@
-# ProactiveDialogDataset
-
 import importlib
-from typing import Dict, Generator, List, Tuple, Union
 import os
+
+from typing import Dict, Generator, List, Tuple, Union
+from functools import lru_cache
 from pathlib import Path
+from langchain.docstore.document import Document
 from langchain.text_splitter import MarkdownHeaderTextSplitter, TextSplitter
 from langchain_community.document_loaders import JSONLoader, TextLoader
 from pprint import pprint
-from utils import logger
 from ragim.settings import Settings
+from ragim.text_splitter import (
+    zh_title_enhance as func_zh_title_enhance,
+)
+from ragim.utils import (StaticPathTools)
 
 
-class StaticPathTools:
-    @staticmethod
-    def get_kb_path(kb_name: str):
-        return os.path.join(Settings.basic_settings.KB_ROOT_PATH, kb_name)
-        
-    @staticmethod
-    def get_doc_path(kb_name: str):
-        return os.path.join(StaticPathTools.get_kb_path(kb_name), "content")
-
-    @staticmethod
-    def get_vec_path(kb_name: str, vector_name: str):
-        return os.path.join(StaticPathTools.get_kb_path(kb_name), "vector_store", vector_name)
-    
-    @staticmethod
-    def get_full_path(kb_name: str, doc_name: str):
-        doc_path = Path(StaticPathTools.get_doc_path(kb_name)).resolve()    # 转化为绝对路径
-        full_path = (doc_path / doc_name).resolve()
-        if str(full_path).startswith(str(doc_path)):
-            return str(full_path)
-
-
-class StaticLoaderTools:
+class StaticLoaderAndSplitterTools:
     """
     Loader 字典
     """
     LOADER_DICT = {
-       "UnstructuredHTMLLoader": [".html", ".htm"],
+        "UnstructuredHTMLLoader": [".html", ".htm"],
         "MHTMLLoader": [".mhtml"],
         "TextLoader": [".md"],
         "UnstructuredMarkdownLoader": [".md"],
@@ -83,7 +66,7 @@ class StaticLoaderTools:
 
     @staticmethod
     def get_loaderClass(ext):
-        for LoaderClass, extensions in StaticLoaderTools.LOADER_DICT.items():
+        for LoaderClass, extensions in StaticLoaderAndSplitterTools.LOADER_DICT.items():
             if ext in extensions:
                 return LoaderClass
     
@@ -140,14 +123,103 @@ class StaticLoaderTools:
         return loader
 
 
+    @lru_cache()
+    def make_text_splitter(splitter_name, chunk_size, chunk_overlap):
+        """
+        根据指定参数动态创建文本切分器（TextSplitter）实例
+        优先使用项目自定义切分器，无则使用langchain内置切分器，异常时兜底为通用递归字符切分器
+        使用lru_cache缓存切分器实例，避免重复创建相同参数的切分器
+        
+        :param splitter_name: 切分器名称（如SpacyTextSplitter/RecursiveCharacterTextSplitter等）
+        :param chunk_size: 每个文本块的最大长度（字符数/Token数，取决于切分器类型）
+        :param chunk_overlap: 相邻文本块的重叠长度，保证上下文连贯性
+        :return: 初始化完成的TextSplitter实例
+        """
+        # 切分器兜底
+        splitter_name = splitter_name or "SpacyTextSplitter"
+        try:
+            # ========== 核心逻辑：动态加载切分器类 ========== 
+            # 1. 优先导入自定义切分器模块
+            try: 
+                text_splitter_module = importlib.import_module("ragim.text_splitter")
+                TextSplitter = getattr(text_splitter_module, splitter_name)
+            # 2. 否则使用 langchain 的切分器
+            except:  
+                text_splitter_module = importlib.import_module(
+                    "langchain.text_splitter"
+                )
+                TextSplitter = getattr(text_splitter_module, splitter_name)
+
+            # ========== 切分器实例化：按不同数据源类型适配参数 ==========
+            # 从配置中获取当前切分器的来源类型（tiktoken/huggingface/默认），来源不同参数不同
+            # 1. 来自 tiktoken 的切分器
+            if (Settings.kb_settings.text_splitter_dict[splitter_name]["source"] == "tiktoken"):
+                try:
+                    text_splitter = TextSplitter.from_tiktoken_encoder(
+                        encoding_name=Settings.kb_settings.text_splitter_dict[splitter_name][
+                            "tokenizer_name_or_path"
+                        ],
+                        pipeline="zh_core_web_sm",
+                        chunk_size=chunk_size,
+                        chunk_overlap=chunk_overlap,
+                    )
+                except:
+                    text_splitter = TextSplitter.from_tiktoken_encoder(
+                        encoding_name=Settings.kb_settings.text_splitter_dict[splitter_name][
+                            "tokenizer_name_or_path"
+                        ],
+                        chunk_size=chunk_size,
+                        chunk_overlap=chunk_overlap,
+                    )
+            # 2. 来自 huggingface 的切分器
+            elif (Settings.kb_settings.text_splitter_dict[splitter_name]["source"] == "huggingface"):
+                if (Settings.kb_settings.text_splitter_dict[splitter_name]["tokenizer_name_or_path"] == "gpt2"):
+                    from langchain.text_splitter import CharacterTextSplitter
+                    from transformers import GPT2TokenizerFast
+                    tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+                else:
+                    from transformers import AutoTokenizer
+                    tokenizer = AutoTokenizer.from_pretrained(
+                        Settings.kb_settings.text_splitter_dict[splitter_name]["tokenizer_name_or_path"],
+                        trust_remote_code=True,
+                    )
+                text_splitter = TextSplitter.from_huggingface_tokenizer(
+                    tokenizer=tokenizer,
+                    chunk_size=chunk_size,
+                    chunk_overlap=chunk_overlap,
+                )
+            # 3. 默认切分器
+            else:
+                try:
+                    text_splitter = TextSplitter(
+                        pipeline="zh_core_web_sm",
+                        chunk_size=chunk_size,
+                        chunk_overlap=chunk_overlap,
+                    )
+                except:
+                    text_splitter = TextSplitter(
+                        chunk_size=chunk_size, chunk_overlap=chunk_overlap
+                    )
+        except Exception as e:
+            print(e)
+            text_splitter_module = importlib.import_module("langchain.text_splitter")
+            TextSplitter = getattr(text_splitter_module, "RecursiveCharacterTextSplitter")
+            text_splitter = TextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+
+        # If you use SpacyTextSplitter you can use GPU to do split likes Issue #1287
+        # text_splitter._tokenizer.max_length = 37016792
+        # text_splitter._tokenizer.prefer_gpu()
+        return text_splitter
+
 """
+一个 .txt 或者一个 .md 就是一个此类的实例
 先通过 XXXLoader 将 .xxx 后缀的文件转为 doc 对象（self.docs）
 再通过 splitter 将 doc 对象拆分成小片段（self.splited_docs）
 """
 class KnowledgeFile:
     ext: str = ""                   # 文件扩展名（小写）
     kb_name: str = ""               # 知识库名称
-    docname: str = ""              # 标准化后的文件名
+    docname: str = ""               # 标准化后的文件名
     docpath: str = ""               # 文件完整路径
     loader_kwargs: Dict = {}        # 加载器配置参数
     loader_name: str = ""           # 文档加载器名称
@@ -171,20 +243,19 @@ class KnowledgeFile:
         self.kb_name = kb_name
         self.docname = str(Path(file_path).as_posix())    # 封装处理文件路径，兼容不同操作系统
         self.ext = os.path.splitext(file_path)[-1].lower()  
-        if self.ext not in StaticLoaderTools.SUPPORTED_EXTS:
+        if self.ext not in StaticLoaderAndSplitterTools.SUPPORTED_EXTS:
             raise ValueError(f"暂未支持的文件格式 {self.docname}")
         self.docpath = StaticPathTools.get_full_path(kb_name, self.docname)  # 完整的文件名
        
         # Loader 和 Spliter 设置
         self.loader_kwargs = loader_kwargs
-        self.doc_loader_name = StaticLoaderTools.get_LoaderClass(self.ext)
+        self.doc_loader_name = StaticLoaderAndSplitterTools.get_LoaderClass(self.ext)
         self.text_splitter_name = Settings.kb_settings.TEXT_SPLITTER_NAME
         self.docs = None   
         self.splited_docs = None
 
-
     def file2docs(self, refresh: bool = False):
-        """ 将文件内容转换为文档对象列表。
+        """ 根据文件类型，将文件内容 load 成 document。
 
         读取指定文件，解析内容并生成文档对象；
         当 refresh=True 时，会强制重新读取文件，忽略缓存。
@@ -198,7 +269,7 @@ class KnowledgeFile:
         if self.docs is None or refresh:
             logger.info(f"{self.loader_name} used for {self.docpath}")
             # 拿到 Loader
-            loader = StaticLoaderTools.get_loader(
+            loader = StaticLoaderAndSplitterTools.get_loader(
                 loader_name=self.loader_name,
                 file_path=self.docpath,
                 loader_kwargs=self.loader_kwargs,
@@ -209,22 +280,71 @@ class KnowledgeFile:
             self.docs = loader.load()
         return self.docs
 
+    def docs2texts(
+        self,
+        docs: List[Document] = None,
+        zh_title_enhance: bool = Settings.kb_settings.ZH_TITLE_ENHANCE,
+        refresh: bool = False,
+        chunk_size: int = Settings.kb_settings.CHUNK_SIZE,
+        chunk_overlap: int = Settings.kb_settings.OVERLAP_SIZE,
+        text_splitter: TextSplitter = None,
+    ):
+        """
+        将文档对象切分为小文本块，支持中文标题增强，适用于 LLM 知识库构建
+        :param docs: 待切分的 Document 文档列表，若为 None 则从文件加载
+        :param zh_title_enhance: 是否开启中文标题增强（提升检索效果）
+        :param refresh: 是否强制重新从文件加载文档（用于文件更新场景）
+        :param chunk_size: 每个文本块的最大字符长度
+        :param chunk_overlap: 相邻文本块的重叠字符长度（保证上下文连贯）
+        :param text_splitter: 自定义文本切分器，未传则自动创建
+        :return: 切分并优化后的 Document 文档列表
+        """
+        docs = docs or self.file2docs(refresh=refresh)
+        # 检查文件是否为空，或者是否需要最实时的文档
+        if not docs:
+            return []
+        
+        # 仅对非CSV文件进行切分（CSV文件通常按行处理，无需额外切分）
+        if self.ext not in [".csv"]:
+            # 创建通用文本切分器
+            if text_splitter is None:
+                text_splitter = StaticLoaderAndSplitterTools.make_text_splitter(
+                    splitter_name=self.text_splitter_name,
+                    chunk_size=chunk_size,
+                    chunk_overlap=chunk_overlap,
+                )
+            # 通用切分器直接处理文档列表，返回切分后的小文档列表
+            docs = text_splitter.split_documents(docs)
 
+        # 检查切分结果是否为空
+        if not docs:
+            return []
+        print(f"文档切分示例：{docs[0]}")
+
+        # 中文标题增强
+        if zh_title_enhance:
+            docs = func_zh_title_enhance(docs)
+
+        self.splited_docs = docs
+        return self.splited_docs
 
 
 if __name__ == "__main__":
 
     # 创建文件处理对象
+    # TODO 建议是使用很多种类型的数据进行一个测试，可以参考 chatchat 中的测试代码
+
+    # 测试 proactive dialog dataset
     kb_file = KnowledgeFile(
-        file_path="D:\\MyProjects\\ragIM\\data\\raw_data\\ProactiveDialogDataset\\data_txt\\scene_6f13d1\\num_task_1\\dialogue_0.txt",
-        kb_file="test")
-    
+        file_path="d:\\MyProjects\\ragIM\\data\\raw_data\\ProactiveDialogDataset\\data_txt\\scene_6f13d1\\num_task_1\\dialogue_0.txt", 
+        kb_name="samples"
+    )
+
     # 转化为 doc
     docs = kb_file.file2docs()
-    
-    # 切分 doc
-    texts = kb_file.docs2splited(docs)
 
+    # 切分 doc
+    texts = kb_file.docs2texts(docs)
     for text in texts:
         print(text)
-
+    

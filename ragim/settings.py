@@ -8,7 +8,6 @@ import typing as t
 import nltk
 
 from ragim import __version__
-from ragim.pydantic_settings_file import *
 
 
 # ragIM 数据目录，必须通过环境变量设置。如未设置则自动使用当前目录。
