@@ -8,7 +8,7 @@ from langchain_community.document_loaders.unstructured import UnstructuredFileLo
 from PIL import Image
 
 # from ragim.settings import Settings
-from ragim.ocr_loader.ocr import get_ocr
+from server.file_service.ocr_loader.ocr import get_ocr
 
 
 class RapidOCRPDFLoader(UnstructuredFileLoader):

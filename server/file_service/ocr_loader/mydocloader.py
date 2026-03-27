@@ -3,7 +3,7 @@ from typing import List
 import tqdm
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
 from langchain_core.documents import Document
-from ragim.ocr_loader.ocr import get_ocr
+from server.file_service.ocr_loader.ocr import get_ocr
 
 class RapidOCRDocLoader(UnstructuredFileLoader):
 

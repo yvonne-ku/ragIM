@@ -1,130 +1,77 @@
 from __future__ import annotations
 
+from functools import cached_property
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 import typing as t
 
 import nltk
+from pydantic import BaseModel
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from ragim import __version__
+from server import __version__
+
+RAGIM_ROOT: Path = Path(os.environ.get("RAGIM_ROOT", "..")).resolve()
+SERVER_ROOT: Path = RAGIM_ROOT / "server"
 
 
-# ragIM 数据目录，必须通过环境变量设置。如未设置则自动使用当前目录。
-RAGIM_ROOT = Path(os.environ.get("RAGIM_ROOT", ".")).resolve()
+# 项目基础配置
+class BasicSettings(BaseSettings):
 
-
-# BasicSettings 是一个配置类
-# 1. 定义项目所需的基本配置项，并提供默认值
-# 2. 支持从外部 YAML 文件（model_config）加载自定义配置
-# 3. 提供一些 @cached_property 标注的计算属性
-# 除 log_verbose/HTTPX_DEFAULT_TIMEOUT 修改后即时生效，其它配置项修改后都需要重启服务器才能生效，服务运行期间请勿修改
-class BasicSettings(BaseFileSettings):
-
-    model_config = SettingsConfigDict(yaml_file=RAGIM_ROOT / "basic_settings.yaml")
+    model_config = SettingsConfigDict(yaml_file=SERVER_ROOT / "basic_settings.yaml")
     """会根据该配置文件合并默认值生成项目代码的版本"""
 
-    version: str = __version__
-    """生成该配置模板的项目代码版本，如这里的值与程序实际版本不一致，建议重建配置文件模板"""
+    # 项目目录结构信息
+    DATA_ROOT: Path = RAGIM_ROOT / "data"
+    NLTK_DATA_PATH: Path = DATA_ROOT / "nltk_data"    # NLTK 数据目录
+    KB_ROOT: Path = DATA_ROOT / "knowledge_base"      # 知识库根目录
+    MEDIA_PATH: Path = DATA_ROOT / "media"            # 模型生成内容（图片、视频、音频等）保存位置
+    LOG_ROOT: Path = DATA_ROOT / "logs"
+    TEMP_PATH: Path = DATA_ROOT / "temp"               # 临时文件目录
 
-    log_verbose: bool = False
-    """是否开启日志详细信息"""
+    nltk.data.path.append(str(NLTK_DATA_PATH))
 
-    HTTPX_DEFAULT_TIMEOUT: float = 300
-    """httpx 请求默认超时时间（秒）。如果加载模型或对话较慢，出现超时错误，可以适当加大该值"""
+    def make_dirs(self):
+        '''创建所有数据目录'''
+        for p in [
+            self.DATA_ROOT,
+            self.MEDIA_PATH,
+            self.LOG_ROOT,
+            self.TEMP_PATH,
+        ]:
+            p.mkdir(parents=True, exist_ok=True)
+        for n in ["image", "audio", "video"]:
+            (self.MEDIA_PATH / n).mkdir(parents=True, exist_ok=True)
+        Path(self.KB_ROOT).mkdir(parents=True, exist_ok=True)
 
-    # @computed_field
-    @cached_property
-    def PACKAGE_ROOT(self) -> Path:
-        """代码根目录"""
-        return Path(__file__).parent
 
-    # @computed_field
-    @cached_property
-    def DATA_PATH(self) -> Path:
-        """用户数据根目录"""
-        p = RAGIM_ROOT / "data"
-        return p
-
-    # @computed_field
-    @cached_property
-    def IMG_DIR(self) -> Path:
-        """项目相关图片目录"""
-        p = self.PACKAGE_ROOT / "img"
-        return p
-
-    # @computed_field
-    @cached_property
-    def NLTK_DATA_PATH(self) -> Path:
-        """nltk 模型存储路径"""
-        p = self.PACKAGE_ROOT / "data/nltk_data"
-        return p
-
-    # @computed_field
-    @cached_property
-    def LOG_PATH(self) -> Path:
-        """日志存储路径"""
-        p = self.DATA_PATH / "logs"
-        return p
-
-    # @computed_field
-    @cached_property
-    def MEDIA_PATH(self) -> Path:
-        """模型生成内容（图片、视频、音频等）保存位置"""
-        p = self.DATA_PATH / "media"
-        return p
-
-    # @computed_field
-    @cached_property
-    def BASE_TEMP_DIR(self) -> Path:
-        """临时文件目录，主要用于文件对话"""
-        p = self.DATA_PATH / "temp"
-        (p / "openai_files").mkdir(parents=True, exist_ok=True)
-        return p
-
-    KB_ROOT_PATH: str = str(RAGIM_ROOT / "data/knowledge_base")
-    """知识库默认存储路径"""
-
-    SQLALCHEMY_DATABASE_URI:str = "sqlite:///" + str(RAGIM_ROOT / "data/knowledge_base/info.db")
-    """知识库信息数据库连接URI。除了向量数据库，项目通常还需要一个关系型数据库来记录知识库的元数据（比如哪个文档属于哪个知识库、文档的分块信息、上传时间等）"""
-
+    # 服务器信息
     OPEN_CROSS_DOMAIN: bool = False
     """API 是否开启跨域"""
 
     DEFAULT_BIND_HOST: str = "0.0.0.0" if sys.platform != "win32" else "127.0.0.1"
     """
-    各服务器默认绑定host。如改为"0.0.0.0"需要修改下方所有XX_SERVER的host
-    Windows 下 WEBUI 自动弹出浏览器时，如果地址为 "0.0.0.0" 是无法访问的，需要手动修改地址栏
+    允许访问的主机地址
+    0.0.0.0 表示监听所有网卡上的请求，所以访问请求可以打在本机的所有网卡上
+    127.0.0.1 表示仅监听从本机回环地址来的请求，也就是仅本机开发访问使用
+    这里的判断逻辑是：如果是 windows 系统，就监听回环地址，否则监听所有网卡
     """
 
     API_SERVER: dict = {"host": DEFAULT_BIND_HOST, "port": 7861, "public_host": "127.0.0.1", "public_port": 7861}
-    """API 服务器地址。其中 public_host 用于生成云服务公网访问链接（如知识库文档链接）"""
+    """API 服务器地址"""
 
     WEBUI_SERVER: dict = {"host": DEFAULT_BIND_HOST, "port": 8501}
-    """WEBUI 服务器地址"""
+    """WEB UI 服务器地址"""
 
-    def make_dirs(self):
-        '''创建所有数据目录'''
-        for p in [
-            self.DATA_PATH,
-            self.MEDIA_PATH,
-            self.LOG_PATH,
-            self.BASE_TEMP_DIR,
-        ]:
-            p.mkdir(parents=True, exist_ok=True)
-        for n in ["image", "audio", "video"]:
-            (self.MEDIA_PATH / n).mkdir(parents=True, exist_ok=True)
-        Path(self.KB_ROOT_PATH).mkdir(parents=True, exist_ok=True)
+    SQLALCHEMY_DATABASE_URI: str = "sqlite:///" + str(KB_ROOT / "info.db")
+    """内嵌DB，记录KB的元数据"""
 
 
-# KBSettings 是一个配置类
-# 1. 定义项目所需的知识库相关配置
-# 2. 支持从外部 YAML 文件（model_config）加载自定义配置
-class KBSettings(BaseFileSettings):
+# 知识库相关配置
+class KBSettings(BaseSettings):
 
-    """知识库相关配置"""
-
-    model_config = SettingsConfigDict(yaml_file=RAGIM_ROOT / "kb_settings.yaml")
+    model_config = SettingsConfigDict(yaml_file=SERVER_ROOT / "kb_settings.yaml")
 
     DEFAULT_KNOWLEDGE_BASE: str = "samples"
     """默认使用的知识库"""
@@ -251,9 +198,8 @@ class KBSettings(BaseFileSettings):
     """指定 Embedding 模型（向量模型）的自定义词表文件路径 —— 可以添加领域专属词汇，提升模型对专业术语的向量表示精度。"""
 
 
-# PlatformConfig 是一个配置类
-# 1. 定义模型加载平台相关配置
-class PlatformConfig(MyBaseModel):
+# 定义模型加载平台相关配置
+class PlatformConfig(BaseModel):
     """模型加载平台配置"""
 
     platform_name: str = "xinference"
@@ -299,10 +245,8 @@ class PlatformConfig(MyBaseModel):
     """该平台支持的 TTS 模型列表，auto_detect_model 设为 True 时自动检测"""
 
 
-# ApiModelSettings 是一个配置类
-# 1. 定义模型配置项
-# 2. 支持从外部 YAML 文件（model_config）加载自定义配置
-class ApiModelSettings(BaseFileSettings):
+# 定义模型配置项
+class ApiModelSettings(BaseSettings):
     """模型配置项"""
 
     model_config = SettingsConfigDict(yaml_file=RAGIM_ROOT / "model_settings.yaml")
@@ -465,10 +409,8 @@ class ApiModelSettings(BaseFileSettings):
     """模型平台配置"""
 
 
-# ToolSettings 是一个配置类
-# 1. 定义 Agent 工具配置项
-# 2. 支持从外部 YAML 文件（model_config）加载自定义配置
-class ToolSettings(BaseFileSettings):
+# 定义 Agent 工具配置项
+class ToolSettings(BaseSettings):
     """Agent 工具配置项"""
     model_config = SettingsConfigDict(yaml_file=RAGIM_ROOT / "tool_settings.yaml",
                                       json_file=RAGIM_ROOT / "tool_settings.json",
@@ -618,10 +560,8 @@ class ToolSettings(BaseFileSettings):
     请确保部署的网络环境良好，以免造成超时等问题'''
 
 
-# PromptSettings 是一个配置类
-# 1. 定义 Prompt 模板
-# 2. 支持从外部 YAML 文件（model_config）加载自定义配置
-class PromptSettings(BaseFileSettings):
+# 定义 Prompt 模板
+class PromptSettings(BaseSettings):
     """Prompt 模板.除 Agent 模板使用 f-string 外，其它均使用 jinja2 格式"""
 
     model_config = SettingsConfigDict(yaml_file=RAGIM_ROOT / "prompt_settings.yaml",
@@ -950,33 +890,10 @@ class PromptSettings(BaseFileSettings):
     """后处理模板"""
 
 
-class SettingsContainer:
-    RAGIM_ROOT = RAGIM_ROOT
 
-    basic_settings: BasicSettings = settings_property(BasicSettings())
-    kb_settings: KBSettings = settings_property(KBSettings())
-    model_settings: ApiModelSettings = settings_property(ApiModelSettings())
-    tool_settings: ToolSettings = settings_property(ToolSettings())
-    prompt_settings: PromptSettings = settings_property(PromptSettings())
-
-    def create_all_templates(self):
-        self.basic_settings.create_template_file(write_file=True)
-        self.kb_settings.create_template_file(write_file=True)
-        self.model_settings.create_template_file(sub_comments={ "MODEL_PLATFORMS": {"model_obj": PlatformConfig(), "is_entire_comment": True}}, write_file=True)
-        self.tool_settings.create_template_file(write_file=True, file_format="yaml", model_obj=ToolSettings())
-        self.prompt_settings.create_template_file(write_file=True, file_format="yaml")
-
-    def set_auto_reload(self, flag: bool=True):
-        self.basic_settings.auto_reload = flag
-        self.kb_settings.auto_reload = flag
-        self.model_settings.auto_reload = flag
-        self.tool_settings.auto_reload = flag
-        self.prompt_settings.auto_reload = flag
-
-
-Settings = SettingsContainer()
-nltk.data.path.append(str(Settings.basic_settings.NLTK_DATA_PATH))
-
-
-if __name__ == "__main__":
-    Settings.create_all_templates()
+basic_settings = BasicSettings()
+kb_settings = KBSettings()
+platform_config = PlatformConfig()
+apiModelSettings = ApiModelSettings()
+tool_settings = ToolSettings()
+prompt_settings = PromptSettings()

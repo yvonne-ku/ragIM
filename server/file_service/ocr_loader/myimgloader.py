@@ -2,7 +2,7 @@ from typing import List
 
 from langchain_core.documents import Document
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
-from ragim.ocr_loader.ocr import get_ocr
+from server.file_service.ocr_loader.ocr import get_ocr
 
 
 class RapidOCRLoader(UnstructuredFileLoader):

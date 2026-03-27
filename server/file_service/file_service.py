@@ -8,11 +8,11 @@ from langchain.docstore.document import Document
 from langchain.text_splitter import MarkdownHeaderTextSplitter, TextSplitter
 from langchain_community.document_loaders import JSONLoader, TextLoader
 from pprint import pprint
-from ragim.settings import Settings
-from ragim.text_splitter import (
+from server.settings import Settings
+from server.file_service.text_splitter import (
     zh_title_enhance as func_zh_title_enhance,
 )
-from ragim.utils import (StaticPathTools)
+from utils import (StaticPathTools)
 
 
 class StaticLoaderAndSplitterTools:

@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 
-from ragim.settings import Settings
+from server.settings import Settings
 
 
 class StaticPathTools:
