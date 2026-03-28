@@ -8,11 +8,11 @@ from langchain.docstore.document import Document
 from langchain.text_splitter import MarkdownHeaderTextSplitter, TextSplitter
 from langchain_community.document_loaders import JSONLoader, TextLoader
 from pprint import pprint
-from server.settings import Settings
+from server import settings
 from server.file_service.text_splitter import (
     zh_title_enhance as func_zh_title_enhance,
 )
-from utils import (StaticPathTools)
+from server.utils import StaticPathTools
 
 
 class StaticLoaderAndSplitterTools:
@@ -249,8 +249,8 @@ class KnowledgeFile:
        
         # Loader 和 Spliter 设置
         self.loader_kwargs = loader_kwargs
-        self.doc_loader_name = StaticLoaderAndSplitterTools.get_LoaderClass(self.ext)
-        self.text_splitter_name = Settings.kb_settings.TEXT_SPLITTER_NAME
+        self.doc_loader_name = StaticLoaderAndSplitterTools.get_loaderClass(self.ext)
+        self.text_splitter_name = settings.kb_settings.TEXT_SPLITTER_NAME
         self.docs = None   
         self.splited_docs = None
 
@@ -283,10 +283,10 @@ class KnowledgeFile:
     def docs2texts(
         self,
         docs: List[Document] = None,
-        zh_title_enhance: bool = Settings.kb_settings.ZH_TITLE_ENHANCE,
+        zh_title_enhance: bool = settings.kb_settings.ZH_TITLE_ENHANCE,
         refresh: bool = False,
-        chunk_size: int = Settings.kb_settings.CHUNK_SIZE,
-        chunk_overlap: int = Settings.kb_settings.OVERLAP_SIZE,
+        chunk_size: int = settings.kb_settings.CHUNK_SIZE,
+        chunk_overlap: int = settings.kb_settings.OVERLAP_SIZE,
         text_splitter: TextSplitter = None,
     ):
         """

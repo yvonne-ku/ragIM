@@ -1,13 +1,13 @@
 from pathlib import Path
 import os
 
-from server.settings import Settings
+from server import settings
 
 
 class StaticPathTools:
     @staticmethod
     def get_kb_path(kb_name: str):
-        return os.path.join(Settings.basic_settings.KB_ROOT_PATH, kb_name)
+        return os.path.join(settings.basic_settings.KB_ROOT, kb_name)
         
     @staticmethod
     def get_doc_path(kb_name: str):

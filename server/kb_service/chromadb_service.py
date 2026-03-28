@@ -69,6 +69,37 @@ class SimpleChromaKB:
         ids = self.template.add_documents(documents)
         return ids
 
+    def add_file(self, file_path: str, loader_kwargs: dict = {}):
+        """
+        将原始数据处理后存入向量数据库
+        通过 KnowledgeFile 处理文件并将其存入向量数据库
+        """
+        from server.file_service.file_service import KnowledgeFile
+        
+        try:
+            # 1. 创建 KnowledgeFile 实例
+            kb_file = KnowledgeFile(
+                file_path=file_path,
+                kb_name=self.kb_name,
+                loader_kwargs=loader_kwargs
+            )
+            
+            # 2. files 转化为 docs
+            docs = kb_file.file2docs()
+
+            # 3. 切分 docs
+            texts = kb_file.docs2texts(docs)    
+            
+            # 4. 将切分后的文档片段添加到向量数据库中
+            if texts:
+                return self.add_documents(docs)
+            else:
+                print(f"文件 {file_path} 处理后未产生任何文档片段。")
+                return []
+        except Exception as e:
+            print(f"添加文件 {file_path} 到知识库 {self.kb_name} 时出错: {e}")
+            return []
+
     def search(self, query: str, top_k: int = 3) -> List[Document]:
         """
         执行相似度搜索
@@ -91,6 +122,7 @@ if __name__ == "__main__":
     )
     
     # 准备几个文档对象 (你可以用你之前学到的 loader 和 splitter 生成这些对象)
+    # 这里的测试直接用 Document，在 file_service 中已经测试过 loader 和 splitter
     test_docs = [
         Document(page_content="张三是一个爱学习的大学生。", metadata={"source": "test.txt"}),
         Document(page_content="李四喜欢在图书馆看书。", metadata={"source": "test.txt"}),
@@ -111,3 +143,4 @@ if __name__ == "__main__":
         
     # 删除集合，释放空间
     my_kb.delete_collection()
+    print("\n测试完成，已删除集合。")

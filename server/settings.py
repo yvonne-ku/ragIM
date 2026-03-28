@@ -894,6 +894,6 @@ class PromptSettings(BaseSettings):
 basic_settings = BasicSettings()
 kb_settings = KBSettings()
 platform_config = PlatformConfig()
-apiModelSettings = ApiModelSettings()
+api_model_settings = ApiModelSettings()
 tool_settings = ToolSettings()
 prompt_settings = PromptSettings()
