@@ -20,14 +20,17 @@ __all__ = ["logger", "StaticPathTools"]
 class StaticPathTools:
     @staticmethod
     def get_kb_path(kb_name: str):
+        """知识库根目录"""
         return os.path.join(settings.basic_settings.KB_ROOT, kb_name)
         
     @staticmethod
-    def get_doc_path(kb_name: str):
+    def get_raw_path(kb_name: str):
+        """知识库 raw data 地址"""
         return os.path.join(StaticPathTools.get_kb_path(kb_name), "content")
 
     @staticmethod
     def get_vs_path(kb_name: str, vector_name: str):
+        """知识库 vector 地址"""
         return os.path.join(StaticPathTools.get_kb_path(kb_name), "vector_store", vector_name)
     
     @staticmethod

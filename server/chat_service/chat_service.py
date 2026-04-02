@@ -12,7 +12,7 @@ from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain.prompts.chat import ChatPromptTemplate
 from sympy.physics.units import current
 
-from server.kb_service.chromadb_service import SimpleChromaKB
+from server.kb_service.chromadb_service import get_kb
 from server import settings
 from server.utils import logger
 
@@ -44,7 +44,7 @@ async def chat_service(
 
     # 1. 初始化知识库服务
     try:
-        kb = SimpleChromaKB(kb_name=kb_name)
+        kb = get_kb(kb_name=kb_name)
     except Exception as e:
         return {"code": 404, "msg": f"知识库 {kb_name} 初始化失败: {e}"}
 

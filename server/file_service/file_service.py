@@ -138,7 +138,8 @@ class StaticLoaderAndSplitterTools:
         :return: 初始化完成的TextSplitter实例
         """
         # 切分器兜底
-        splitter_name = splitter_name or "SpacyTextSplitter"
+        if splitter_name == "" or splitter_name is None:
+            splitter_name = "SpacyTextSplitter"
         try:
             # ========== 核心逻辑：动态加载切分器类 ========== 
             # 1. 优先导入自定义切分器模块
@@ -221,8 +222,8 @@ class StaticLoaderAndSplitterTools:
 class KnowledgeFile:
     ext: str = ""                   # 文件扩展名（小写）
     kb_name: str = ""               # 知识库名称
-    docname: str = ""               # 标准化后的文件名
-    docpath: str = ""               # 文件完整路径
+    doc_name: str = ""               # 标准化后的文件名
+    doc_path: str = ""               # 文件完整路径
     loader_kwargs: Dict = {}        # 加载器配置参数
     loader_name: str = ""           # 文档加载器名称
     text_splitter_name: str = ""    # 文本分割器名称
@@ -243,11 +244,11 @@ class KnowledgeFile:
         """
         # 文件名处理
         self.kb_name = kb_name
-        self.docname = str(Path(file_path).as_posix())    # 封装处理文件路径，兼容不同操作系统
+        self.doc_name = str(Path(file_path).as_posix())    # 封装处理文件路径，兼容不同操作系统
         self.ext = os.path.splitext(file_path)[-1].lower()  
         if self.ext not in StaticLoaderAndSplitterTools.SUPPORTED_EXTS:
-            raise ValueError(f"暂未支持的文件格式 {self.docname}")
-        self.docpath = StaticPathTools.get_full_path(kb_name, self.docname)  # 完整的文件名
+            raise ValueError(f"暂未支持的文件格式 {self.doc_name}")
+        self.doc_path = StaticPathTools.get_full_path(kb_name, self.doc_name)  # 完整的文件名
        
         # Loader 和 Spliter 设置
         self.loader_kwargs = loader_kwargs
@@ -269,11 +270,11 @@ class KnowledgeFile:
             list: 包含文档对象的列表，每个元素是一个文档实例。
         """
         if self.docs is None or refresh:
-            logger.info(f"{self.loader_name} used for {self.docpath}")
+            logger.info(f"{self.loader_name} used for {self.doc_path}")
             # 拿到 Loader
             loader = StaticLoaderAndSplitterTools.get_loader(
                 loader_name=self.loader_name,
-                file_path=self.docpath,
+                file_path=self.doc_path,
                 loader_kwargs=self.loader_kwargs,
             )
             if isinstance(loader, TextLoader):
@@ -315,7 +316,7 @@ class KnowledgeFile:
                     chunk_overlap=chunk_overlap,
                 )
             logger.info(
-                f"{text_splitter.__class__.__name__} used for {self.docpath} with chunk_size={chunk_size}, chunk_overlap={chunk_overlap}")
+                f"{text_splitter.__class__.__name__} used for {self.doc_path} with chunk_size={chunk_size}, chunk_overlap={chunk_overlap}")
             # 检查切分结果是否为空
 
             # 通用切分器直接处理文档列表，返回切分后的小文档列表

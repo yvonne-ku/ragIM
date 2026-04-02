@@ -52,6 +52,7 @@ class SimpleChromaKB:
             print("使用本地嵌入模型（BAAI/bge-small-zh-v1.5）")
 
         # 3. 初始化 Chroma 客户端和 LangChain 提供的包装器
+        # 
         self.client = chromadb.PersistentClient(path=self.vs_path)        
         self.template = Chroma(
             client=self.client,
@@ -110,6 +111,23 @@ class SimpleChromaKB:
     def delete_collection(self):
         """删除当前知识库集合"""
         self.client.delete_collection(self.kb_name)
+
+
+# 只要参数是一样的，lru_cache 就会返回同一个实例
+@lru_cache(maxsize=10)
+def get_kb(
+    kb_name: str,
+    vs_path: str = None,
+    embedding_model_name: str = "bge-large-zh-v1.5"
+) -> SimpleChromaKB:
+    """
+    获取知识库实例
+    """
+    return SimpleChromaKB(
+        kb_name=kb_name,
+        vs_path=vs_path,
+        embedding_model_name=embedding_model_name
+    )
 
 
 if __name__ == "__main__":
