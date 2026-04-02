@@ -10,17 +10,18 @@ from fastapi.concurrency import run_in_threadpool
 from sse_starlette.sse import EventSourceResponse
 from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain.prompts.chat import ChatPromptTemplate
+from sympy.physics.units import current
 
 from server.kb_service.chromadb_service import SimpleChromaKB
 from server import settings
 from server.utils import logger
 
 
-# 用户进入聊天服务界面
 """
 注：
 毕设专注于 针对对话流问答的精确性，为降低系统的复杂度
 1. 不支持与智能问答系统的多轮对话，只关注单个 query 回答的精确性
+2. 不支持提问时上传辅助文档，仅支持直接输入文本
 """
 async def chat_service(
     query: str = Body(..., description="用户输入", examples=["你好"]),
@@ -106,23 +107,20 @@ async def chat_service(
             # 4. 构建提示词（query + page_content + history）
             context = "\n\n".join([doc.page_content for doc in docs])
             question = query
-            if len(docs) == 0:
-                # 没搜到内容时的兜底模板
-                system_prompt = "请直接回答用户的问题。"
-                user_content = f"用户问题: {question}"
-            else:
-                system_prompt = "你是一个基于参考信息的问答助手。请严格根据参考信息回答问题，如果信息不足请直说。"
-                user_content = f"参考信息:\n{context}\n\n用户问题: {question}\n\n请用中文回答:"
-            chat_prompt = ChatPromptTemplate.from_messages([
-                ("system", system_prompt),
-                ("human", user_content)
-            ])
+
+            cur_prompt_key = prompt_name if len(docs) > 0 else "empty"
+            raw_template = settings.prompt_settings.rag.get(
+                cur_prompt_key,
+                settings.prompt_settings.rag.get("default"),
+            )
+            template_str = raw_template.replace("{{context}}", "{context}").replace("{{question}}", "{question}")   # langchain 识别 {} 而不是 {{}}
+            chat_prompt = ChatPromptTemplate.from_template(template_str)
             chain = chat_prompt | llm
 
 
             # 5. 异步执行 LLM 调用
             task = asyncio.create_task(asyncio.wait_for(
-                chain.ainvoke({}),
+                chain.ainvoke({"context": context, "question": question}),
                 timeout=30.0
             ))
 
