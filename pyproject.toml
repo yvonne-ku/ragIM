@@ -3,9 +3,7 @@
 name = "RagIM"
 version = "0.3.0.dev0"
 readme = "README.md"
-packages = [
-    {include = "ragim"},
-]
+package-mode = false
 
 [tool.poetry.scripts]
 ragim = 'ragim.cli:main'

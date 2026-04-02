@@ -69,7 +69,7 @@ class SimpleChromaKB:
         ids = self.template.add_documents(documents)
         return ids
 
-    def add_file(self, file_path: str, loader_kwargs: dict = {}):
+    def add_files(self, file_path: str, loader_kwargs: dict = {}):
         """
         将原始数据处理后存入向量数据库
         通过 KnowledgeFile 处理文件并将其存入向量数据库
@@ -110,7 +110,6 @@ class SimpleChromaKB:
     def delete_collection(self):
         """删除当前知识库集合"""
         self.client.delete_collection(self.kb_name)
-
 
 
 if __name__ == "__main__":

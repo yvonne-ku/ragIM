@@ -7,7 +7,6 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
 from PIL import Image
 
-# from ragim.settings import Settings
 from server.file_service.ocr_loader.ocr import get_ocr
 
 
@@ -132,16 +131,16 @@ class RapidOCRPDFLoader(UnstructuredFileLoader):
 
         text = pdf2text(self.file_path)
 
-        return [Document(
-            page_content=text.strip(),  # 提取的纯文字（去除首尾空格）
-            metadata={
-                "source": self.file_path,  # 文件路径（溯源用）
-                "file_type": "pdf",        # 标记文件类型（便于后续处理）
-                "processed_by": "RapidOCRPDFLoader"  # 标记处理加载器
-            }
-        )]
-        # from unstructured.partition.text import partition_text
-        # return partition_text(text=text, **self.unstructured_kwargs)
+        # return [Document(
+        #     page_content=text.strip(),  # 提取的纯文字（去除首尾空格）
+        #     metadata={
+        #         "source": self.file_path,  # 文件路径（溯源用）
+        #         "file_type": "pdf",        # 标记文件类型（便于后续处理）
+        #         "processed_by": "RapidOCRPDFLoader"  # 标记处理加载器
+        #     }
+        # )]
+        from unstructured.partition.text import partition_text
+        return partition_text(text=text, **self.unstructured_kwargs)
 
 
 if __name__ == "__main__":

@@ -3370,23 +3370,6 @@ url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 reference = "tsinghua"
 
 [[package]]
-name = "langchain-zhipuai"
-version = "0.0.1"
-description = "LangChain interface for Zhipu AI"
-optional = false
-python-versions = ">=3.7,<4.0"
-groups = ["main"]
-files = [
-    {file = "langchain_zhipuai-0.0.1-py3-none-any.whl", hash = "sha256:c4feeda01f553510dc41a8834fa91da5d6f35a43775f2e8ff7fdcc21e1075401"},
-    {file = "langchain_zhipuai-0.0.1.tar.gz", hash = "sha256:05d42fada5e7b2d24cd4c585f9f424caa7901a27c3bb5d2c34c11d8a21cfe9a6"},
-]
-
-[package.source]
-type = "legacy"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-reference = "tsinghua"
-
-[[package]]
 name = "langchainhub"
 version = "0.1.14"
 description = ""
@@ -10173,4 +10156,4 @@ zhipuai = ["zhipuai"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.12,!=3.9.7"
-content-hash = "1a6dba61c307b2725014315c57c2960226696be0f4321bb5eadb38fe7903a6ae"
+content-hash = "3c377f8c01d40e680f343ffed8017a75fe4c7bcb11195d9fda4b67eef77d8d70"

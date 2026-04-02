@@ -14,11 +14,10 @@ from langchain.prompts.chat import ChatPromptTemplate
 from server.chat_service.utils import History
 from server.kb_service.chromadb_service import SimpleChromaKB
 from server import settings
-from utils import logger
+from server.utils import logger
 
 
-
-
+# 用户进入聊天服务界面
 # 功能：根据用户问题，从知识库检索内容，调用LLM生成回答，支持SSE流式输出
 async def chat_service(
     # 用户输入
@@ -60,6 +59,8 @@ async def chat_service(
     # FastAPI请求对象
     request: Request = None,
 ):
+
+
     # 1. 初始化知识库服务
     try:
         kb = SimpleChromaKB(kb_name=kb_name)

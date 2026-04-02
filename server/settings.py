@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from functools import cached_property
 import os
 import sys
 from pathlib import Path
 import typing as t
 
-import nltk
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -30,7 +28,7 @@ class BasicSettings(BaseSettings):
     LOG_ROOT: Path = DATA_ROOT / "logs"
     TEMP_PATH: Path = DATA_ROOT / "temp"               # 临时文件目录
 
-    nltk.data.path.append(str(NLTK_DATA_PATH))
+    os.environ["NLTK_DATA"] = str(NLTK_DATA_PATH)
 
     def make_dirs(self):
         '''创建所有数据目录'''
@@ -191,8 +189,9 @@ class KBSettings(BaseSettings):
     为不同的文本分割器提供配置参数
     """
 
-    TEXT_SPLITTER_NAME: str = "ChineseRecursiveTextSplitter"
-    """指定默认使用的文本分割器"""
+    # TEXT_SPLITTER_NAME: str = "ChineseRecursiveTextSplitter"
+    TEXT_SPLITTER_NAME: str = "RecursiveCharacterTextSplitter"
+    """指定默认使用的文本分割器，一个是中文，一个是英文"""
 
     EMBEDDING_KEYWORD_FILE: str = "embedding_keywords.txt"
     """指定 Embedding 模型（向量模型）的自定义词表文件路径 —— 可以添加领域专属词汇，提升模型对专业术语的向量表示精度。"""

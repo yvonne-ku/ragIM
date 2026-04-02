@@ -101,10 +101,10 @@ class RapidOCRDocLoader(UnstructuredFileLoader):
         text = doc2text(self.file_path)
 
         # 替代原有的 return partition_text(...)，无需分词，仅封装文本
-        return [Document(page_content=text.strip(), metadata={"source": self.file_path})]
+        # return [Document(page_content=text.strip(), metadata={"source": self.file_path})]
  
-        # from unstructured.partition.text import partition_text
-        # return partition_text(text=text, **self.unstructured_kwargs)
+        from unstructured.partition.text import partition_text
+        return partition_text(text=text, **self.unstructured_kwargs)
 
 
 if __name__ == "__main__":

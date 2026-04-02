@@ -25,11 +25,11 @@ class RapidOCRLoader(UnstructuredFileLoader):
             return resp
 
         text = img2text(self.file_path)
-        return [Document(page_content=text.strip(), metadata={"source": self.file_path})]
+        # return [Document(page_content=text.strip(), metadata={"source": self.file_path})]
 
 
-        # from unstructured.partition.text import partition_text
-        # return partition_text(text=text, **self.unstructured_kwargs)
+        from unstructured.partition.text import partition_text
+        return partition_text(text=text, **self.unstructured_kwargs)
 
 
 if __name__ == "__main__":

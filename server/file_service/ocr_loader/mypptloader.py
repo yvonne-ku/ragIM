@@ -77,16 +77,16 @@ class RapidOCRPPTLoader(UnstructuredFileLoader):
             return resp
 
         text = ppt2text(self.file_path)
-        return [Document(
-            page_content=text.strip(),  # 提取的纯文字（去除首尾空格）
-            metadata={
-                "source": self.file_path,  # 文件路径（溯源用）
-                "file_type": "pptx",       # 标记文件类型（便于后续处理）
-                "processed_by": "RapidOCRPPTLoader"  # 标记处理加载器
-            }
-        )]
-        # from unstructured.partition.text import partition_text
-        # return partition_text(text=text, **self.unstructured_kwargs)
+        # return [Document(
+        #     page_content=text.strip(),  # 提取的纯文字（去除首尾空格）
+        #     metadata={
+        #         "source": self.file_path,  # 文件路径（溯源用）
+        #         "file_type": "pptx",       # 标记文件类型（便于后续处理）
+        #         "processed_by": "RapidOCRPPTLoader"  # 标记处理加载器
+        #     }
+        # )]
+        from unstructured.partition.text import partition_text
+        return partition_text(text=text, **self.unstructured_kwargs)
 
 
 if __name__ == "__main__":
