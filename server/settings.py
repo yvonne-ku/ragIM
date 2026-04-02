@@ -74,14 +74,8 @@ class KBSettings(BaseSettings):
     DEFAULT_KNOWLEDGE_BASE: str = "samples"
     """默认使用的知识库"""
 
-    DEFAULT_VS_TYPE: t.Literal["faiss", "milvus", "zilliz", "pg", "es", "relyt", "chromadb"] = "faiss"
+    DEFAULT_VS_TYPE: t.Literal["faiss", "milvus", "zilliz", "pg", "es", "relyt", "chromadb"] = "chromadb"
     """默认向量库/全文检索引擎类型"""
-
-    CACHED_VS_NUM: int = 1
-    """缓存向量库数量（针对FAISS）"""
-
-    CACHED_MEMO_VS_NUM: int = 10
-    """缓存临时向量库数量（针对FAISS），用于文件对话"""
 
     CHUNK_SIZE: int = 750
     """知识库中单段文本长度(不适用MarkdownHeaderTextSplitter)"""
@@ -98,12 +92,6 @@ class KBSettings(BaseSettings):
     SCORE_THRESHOLD: float = 0.5
     """知识库匹配相关度阈值，取值范围在0-2之间，SCORE越小，相关度越高，取到2相当于不筛选，建议设置在0.5左右"""
 
-    DEFAULT_SEARCH_ENGINE: t.Literal["bing", "duckduckgo", "metaphor", "searx"] = "duckduckgo"
-    """默认搜索引擎"""
-
-    SEARCH_ENGINE_TOP_K: int = 3
-    """搜索引擎匹配结题数量"""
-
     ZH_TITLE_ENHANCE: bool = False
     """是否开启中文标题加强，以及标题增强的相关配置"""
 
@@ -112,9 +100,6 @@ class KBSettings(BaseSettings):
     PDF OCR 控制：只对宽高超过页面一定比例（图片宽/页面宽，图片高/页面高）的图片进行 OCR。
     这样可以避免 PDF 中一些小图片的干扰，提高非扫描版 PDF 处理速度
     """
-
-    KB_INFO: t.Dict[str, str] = {"samples": "关于本项目issue的解答"}
-    """每个知识库的初始化介绍，用于在初始化知识库时显示和Agent调用，没写则没有介绍，不会被Agent调用。"""
 
     kbs_config: t.Dict[str, t.Dict] = {
         "faiss": {},
@@ -161,7 +146,10 @@ class KBSettings(BaseSettings):
         },
         "chromadb": {}
     }
-    """向量库配置，针对不同的向量库有不同的配置"""
+    """
+    向量库配置
+    针对不同的向量库有不同的配置
+    """
 
     text_splitter_dict: t.Dict[str, t.Dict[str, t.Any]] = {
         "ChineseRecursiveTextSplitter": {
@@ -191,7 +179,7 @@ class KBSettings(BaseSettings):
 
     # TEXT_SPLITTER_NAME: str = "ChineseRecursiveTextSplitter"
     TEXT_SPLITTER_NAME: str = "RecursiveCharacterTextSplitter"
-    """指定默认使用的文本分割器，一个是中文，一个是英文"""
+    """指定默认使用的文本分割器，第一个是中文默认分割器，第二个是英文默认分割器"""
 
     EMBEDDING_KEYWORD_FILE: str = "embedding_keywords.txt"
     """指定 Embedding 模型（向量模型）的自定义词表文件路径 —— 可以添加领域专属词汇，提升模型对专业术语的向量表示精度。"""
@@ -201,47 +189,17 @@ class KBSettings(BaseSettings):
 class PlatformConfig(BaseModel):
     """模型加载平台配置"""
 
-    platform_name: str = "xinference"
+    platform_name: str = "zhipuai"
     """平台名称"""
 
-    platform_type: t.Literal["xinference", "ollama", "oneapi", "fastchat", "openai", "custom openai"] = "xinference"
+    platform_type: t.Literal["xinference", "ollama", "oneapi", "fastchat", "openai", "custom openai"] = "custom openai"
     """平台类型"""
 
-    api_base_url: str = "http://127.0.0.1:9997/v1"
+    api_base_url: str = "https://open.bigmodel.cn/api/paas/v4"
     """openai api url"""
 
-    api_key: str = "EMPTY"
+    api_key: str = os.getenv("ZHIPUAI_API_KEY")
     """api key if available"""
-
-    api_proxy: str = ""
-    """API 代理"""
-
-    api_concurrencies: int = 5
-    """该平台单模型最大并发数"""
-
-    auto_detect_model: bool = False
-    """是否自动获取平台可用模型列表。设为 True 时下方不同模型类型可自动检测"""
-
-    llm_models: t.Union[t.Literal["auto"], t.List[str]] = []
-    """该平台支持的大语言模型列表，auto_detect_model 设为 True 时自动检测"""
-
-    embed_models: t.Union[t.Literal["auto"], t.List[str]] = []
-    """该平台支持的嵌入模型列表，auto_detect_model 设为 True 时自动检测"""
-
-    text2image_models: t.Union[t.Literal["auto"], t.List[str]] = []
-    """该平台支持的图像生成模型列表，auto_detect_model 设为 True 时自动检测"""
-
-    image2text_models: t.Union[t.Literal["auto"], t.List[str]] = []
-    """该平台支持的多模态模型列表，auto_detect_model 设为 True 时自动检测"""
-
-    rerank_models: t.Union[t.Literal["auto"], t.List[str]] = []
-    """该平台支持的重排模型列表，auto_detect_model 设为 True 时自动检测"""
-
-    speech2text_models: t.Union[t.Literal["auto"], t.List[str]] = []
-    """该平台支持的 STT 模型列表，auto_detect_model 设为 True 时自动检测"""
-
-    text2speech_models: t.Union[t.Literal["auto"], t.List[str]] = []
-    """该平台支持的 TTS 模型列表，auto_detect_model 设为 True 时自动检测"""
 
 
 # 定义模型配置项
@@ -250,10 +208,10 @@ class ApiModelSettings(BaseSettings):
 
     model_config = SettingsConfigDict(yaml_file=RAGIM_ROOT / "model_settings.yaml")
 
-    DEFAULT_LLM_MODEL: str = "glm4-chat"
+    DEFAULT_LLM_MODEL: str = "glm-4-plus"
     """默认选用的 LLM 名称"""
 
-    DEFAULT_EMBEDDING_MODEL: str = "bge-m3"
+    DEFAULT_EMBEDDING_MODEL: str = "embedding-3"
     """默认选用的 Embedding 名称"""
 
     Agent_MODEL: str = ""

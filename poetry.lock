@@ -6068,20 +6068,20 @@ reference = "tsinghua"
 
 [[package]]
 name = "pyjwt"
-version = "2.8.0"
+version = "2.9.0"
 description = "JSON Web Token implementation in Python"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "PyJWT-2.8.0-py3-none-any.whl", hash = "sha256:59127c392cc44c2da5bb3192169a91f429924e17aff6534d70fdc02ab3e04320"},
-    {file = "PyJWT-2.8.0.tar.gz", hash = "sha256:57e28d156e3d5c10088e0c68abb90bfac3df82b40a71bd0daa20c65ccd5c23de"},
+    {file = "PyJWT-2.9.0-py3-none-any.whl", hash = "sha256:3b02fb0f44517787776cf48f2ae25d8e14f300e6d7545a4315cee571a415e850"},
+    {file = "pyjwt-2.9.0.tar.gz", hash = "sha256:7e1e5b56cc735432a7369cbfa0efe50fa113ebecdc04ae6922deba8b84582d0c"},
 ]
 
 [package.extras]
 crypto = ["cryptography (>=3.4.0)"]
-dev = ["coverage[toml] (==5.0.4)", "cryptography (>=3.4.0)", "pre-commit", "pytest (>=6.0.0,<7.0.0)", "sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
-docs = ["sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
+dev = ["coverage[toml] (==5.0.4)", "cryptography (>=3.4.0)", "pre-commit", "pytest (>=6.0.0,<7.0.0)", "sphinx", "sphinx-rtd-theme", "zope.interface"]
+docs = ["sphinx", "sphinx-rtd-theme", "zope.interface"]
 tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [package.source]
@@ -10099,16 +10099,15 @@ url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 reference = "tsinghua"
 
 [[package]]
-name = "zhipuai"
-version = "2.1.5.20250825"
-description = "A SDK library for accessing big model apis from ZhipuAI"
-optional = true
+name = "zai-sdk"
+version = "0.2.2"
+description = "A SDK library for accessing big model apis from Z.ai"
+optional = false
 python-versions = ">=3.8, !=2.7.*, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*, !=3.7.*"
 groups = ["main"]
-markers = "extra == \"zhipuai\""
 files = [
-    {file = "zhipuai-2.1.5.20250825-py3-none-any.whl", hash = "sha256:aaad19881e514a4682598f07503b82d60b8b9a91cd83f9bcda988b94853c830d"},
-    {file = "zhipuai-2.1.5.20250825.tar.gz", hash = "sha256:50fc3982565ee631bd640b1166a1d223de227958026a74a1dd0e26dbd58d729c"},
+    {file = "zai_sdk-0.2.2-py3-none-any.whl", hash = "sha256:675e9ff3fc2a86e38631331469b935589ae60492127f2c2822c7555214f2dd25"},
+    {file = "zai_sdk-0.2.2.tar.gz", hash = "sha256:841af188586c41f0f98abcad17b162dc97461c3ab8b3d09f93b0333ebdfe72c3"},
 ]
 
 [package.dependencies]
@@ -10116,7 +10115,8 @@ cachetools = ">=4.2.2"
 httpx = ">=0.23.0"
 pydantic = ">=1.9.0,<3.0"
 pydantic-core = ">=2.14.6"
-pyjwt = ">=2.8.0,<2.9.0"
+pyjwt = ">=2.9.0,<3.0.0"
+sniffio = ">=1.3.1"
 
 [package.source]
 type = "legacy"
@@ -10151,9 +10151,8 @@ reference = "tsinghua"
 [extras]
 ollama = []
 xinference = ["xinference_client"]
-zhipuai = ["zhipuai"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.12,!=3.9.7"
-content-hash = "3c377f8c01d40e680f343ffed8017a75fe4c7bcb11195d9fda4b67eef77d8d70"
+content-hash = "76684a866999b7125508f2aa3e7a7c05df8060910bf5908bcc0fd63de0203a6a"

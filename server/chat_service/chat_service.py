@@ -11,18 +11,19 @@ from sse_starlette.sse import EventSourceResponse
 from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain.prompts.chat import ChatPromptTemplate
 
-from server.chat_service.utils import History
 from server.kb_service.chromadb_service import SimpleChromaKB
 from server import settings
 from server.utils import logger
 
 
 # 用户进入聊天服务界面
-# 功能：根据用户问题，从知识库检索内容，调用LLM生成回答，支持SSE流式输出
+"""
+注：
+毕设专注于 针对对话流问答的精确性，为降低系统的复杂度
+1. 不支持与智能问答系统的多轮对话，只关注单个 query 回答的精确性
+"""
 async def chat_service(
-    # 用户输入
     query: str = Body(..., description="用户输入", examples=["你好"]),
-    # 知识库相关参数
     kb_name: str = Body("", description="知识库名称", examples=["samples"]),
     top_k: int = Body(settings.kb_settings.VECTOR_SEARCH_TOP_K, description="匹配向量数"),
     score_threshold: float = Body(
@@ -31,35 +32,14 @@ async def chat_service(
         ge=0,
         le=2,
     ),
-    # 历史消息
-    history: List[History] = Body(
-        [],
-        description="历史对话",
-        examples=[[
-            {"role": "user",
-            "content": "我们来玩成语接龙，我先来，生龙活虎"},
-            {"role": "assistant",
-            "content": "虎头虎脑"}]]
-    ),
-    # 流式输出
     stream: bool = Body(True, description="流式输出"),
-    # LLM 相关参数
     model: str = Body(settings.api_model_settings.DEFAULT_LLM_MODEL, description="LLM 模型名称"),
     temperature: float = Body(settings.api_model_settings.TEMPERATURE, description="LLM 采样温度", ge=0.0, le=2.0),
-    max_tokens: Optional[int] = Body(
-        settings.api_model_settings.MAX_TOKENS,
-        description="限制LLM生成Token数量"
-    ),
-    prompt_name: str = Body(
-        "default",
-        description="使用的prompt模板名称(在prompt_settings.yaml中配置)"
-    ),
+    max_tokens: Optional[int] = Body(settings.api_model_settings.MAX_TOKENS, description="限制LLM生成Token数量"),
+    prompt_name: str = Body("default", description="使用的prompt模板名称(在prompt_settings.yaml中配置)"),
     # 是否直接返回检索结果，不调用LLM生成
     return_direct: bool = Body(False, description="直接返回检索结果，不送入 LLM"),
-    # FastAPI请求对象
-    request: Request = None,
 ):
-
 
     # 1. 初始化知识库服务
     try:
@@ -70,12 +50,11 @@ async def chat_service(
     # 异步迭代器，SSE流式输出核心
     async def knowledge_base_chat_iterator() -> AsyncIterable[str]:
         try:
-            
-            nonlocal history, prompt_name, max_tokens   # 声明使用外部函数的变量
-            history = [History.from_data(h) for h in history]   # 处理历史消息格式
+            # 声明使用外部函数的变量
+            nonlocal prompt_name, max_tokens
 
             # 2. 检索文档（放入线程池异步执行，避免阻塞），格式化文档来源
-            docs = await run_in_threadpool(kb.search, query=query, top_k=top_k)
+            docs = await run_in_threadpool(kb.search, query=query, top_k=top_k, score_threshold=score_threshold)
             source_documents = []
             for i, doc in enumerate(docs):
                 source_info = f"出处 [{i + 1}] {doc.metadata.get('source', '未知来源')}\n\n{doc.page_content}\n\n"
@@ -94,6 +73,7 @@ async def chat_service(
                 })
                 return
 
+
             # 3. 初始化 LLM
             callback = AsyncIteratorCallbackHandler()
             callbacks = [callback]
@@ -101,35 +81,52 @@ async def chat_service(
             if max_tokens in [None, 0]:
                 max_tokens = settings.api_model_settings.MAX_TOKENS
 
-            from langchain_openai import ChatOpenAI
-            llm = ChatOpenAI(
-                model_name=model,
+            # 默认 glm-4-plus
+            from langchain_community.chat_models import ChatZhipuAI
+            llm = ChatZhipuAI(
+                api_key=settings.platform_config.api_key,
+                model=model,
                 temperature=temperature,
                 max_tokens=max_tokens,
+                streaming=True,
                 callbacks=callbacks,
-                streaming=True
             )
+            # 使用 glm-4-plus
+            if model.startswith("glm-4"):
+                llm = ChatZhipuAI(
+                    api_key=settings.platform_config.api_key,
+                    model=model,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    streaming=True,
+                    callbacks=callbacks,
+                )
 
-            # 4. 通过检索到的文档内容，构建最终输入 LLM 的提示词
+
+            # 4. 构建提示词（query + page_content + history）
             context = "\n\n".join([doc.page_content for doc in docs])
+            question = query
             if len(docs) == 0:
-                prompt_template = "请回答用户的问题。\n\n用户问题: {question}"
+                # 没搜到内容时的兜底模板
+                system_prompt = "请直接回答用户的问题。"
+                user_content = f"用户问题: {question}"
             else:
-                prompt_template = """请根据以下参考信息回答问题。如果参考信息不足以回答问题，请说明。\n\n参考信息:{context}\n\n用户问题: {question}\n\n请用中文回答:"""
+                system_prompt = "你是一个基于参考信息的问答助手。请严格根据参考信息回答问题，如果信息不足请直说。"
+                user_content = f"参考信息:\n{context}\n\n用户问题: {question}\n\n请用中文回答:"
+            chat_prompt = ChatPromptTemplate.from_messages([
+                ("system", system_prompt),
+                ("human", user_content)
+            ])
+            chain = chat_prompt | llm
 
-            # 5. 将历史上下文整合入当前提示词模板
-            input_msg = History(role="user", content=prompt_template).to_msg_template(False)
-            chat_prompt = ChatPromptTemplate.from_messages(
-                [i.to_msg_template() for i in history] + [input_msg])
-            chain = chat_prompt | llm   # 构建链：提示词 → LLM
 
-            # 6. 异步执行 LLM 调用
+            # 5. 异步执行 LLM 调用
             task = asyncio.create_task(asyncio.wait_for(
-                chain.ainvoke({"context": context, "question": query}),
+                chain.ainvoke({}),
                 timeout=30.0
             ))
 
-            # 未找到文档，添加提示
+            # 6. 未找到文档，回答中要添加提示
             if len(source_documents) == 0:
                 source_documents.append("<span style='color:red'>未找到相关文档,该回答为大模型自身能力解答！</span>")
 
@@ -146,7 +143,7 @@ async def chat_service(
                 }
                 yield json.dumps(ret)
 
-                # 第二步：逐token推送LLM输出
+                # 第二步：逐 token 推送 LLM 输出
                 async for token in callback.aiter():
                     ret = {
                         "id": f"chat{uuid.uuid4()}",
@@ -157,7 +154,7 @@ async def chat_service(
                     }
                     yield json.dumps(ret)
             else:
-                # 非流式：拼接所有token，一次性返回
+                # 非流式：拼接所有 token，一次性返回
                 answer = ""
                 async for token in callback.aiter():
                     answer += token

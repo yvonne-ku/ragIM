@@ -8,6 +8,7 @@ from langchain_community.document_loaders.unstructured import UnstructuredFileLo
 from PIL import Image
 
 from server.file_service.ocr_loader.ocr import get_ocr
+from server import settings
 
 
 class RapidOCRPDFLoader(UnstructuredFileLoader):
@@ -87,17 +88,11 @@ class RapidOCRPDFLoader(UnstructuredFileLoader):
                         # 1. 过滤小图片：避免对图标/水印等无效小图做OCR识别
                         img_width_ratio = (bbox[2] - bbox[0]) / page.rect.width     # 图片宽度占页面比例
                         img_height_ratio = (bbox[3] - bbox[1]) / page.rect.height   # 图片高度占页面比例
-                        
-                        # 在调整 settings 文件之前先采用硬编码
-                        PDF_OCR_WIDTH_THRESHOLD = 0.05  # 宽度占页面比例阈值（5%）
-                        PDF_OCR_HEIGHT_THRESHOLD = 0.05  # 高度占页面比例阈值（5%）
-                        if img_width_ratio < PDF_OCR_WIDTH_THRESHOLD or img_height_ratio < PDF_OCR_HEIGHT_THRESHOLD:
-                            continue
 
                         # 对比配置中的阈值：任意维度比例低于阈值则跳过
-                        # if img_width_ratio < Settings.kb_settings.PDF_OCR_THRESHOLD[0] or \
-                        #     img_height_ratio < Settings.kb_settings.PDF_OCR_THRESHOLD[1]:
-                        #     continue
+                        if img_width_ratio < settings.kb_settings.PDF_OCR_THRESHOLD[0] or \
+                            img_height_ratio < settings.kb_settings.PDF_OCR_THRESHOLD[1]:
+                            continue
 
                         # 根据 xref 获取图片像素数据
                         pix = fitz.Pixmap(doc, xref)

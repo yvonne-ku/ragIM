@@ -100,11 +100,11 @@ class SimpleChromaKB:
             print(f"添加文件 {file_path} 到知识库 {self.kb_name} 时出错: {e}")
             return []
 
-    def search(self, query: str, top_k: int = 3) -> List[Document]:
+    def search(self, query: str, top_k: int = 3, score_threshold: float = 1) -> List[Document]:
         """
         执行相似度搜索
         """
-        docs = self.template.similarity_search(query, k=top_k)
+        docs = self.template.similarity_search(query, k=top_k, score_threshold=score_threshold)
         return docs
 
     def delete_collection(self):
