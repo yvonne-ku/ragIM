@@ -42,7 +42,7 @@ class StaticPathTools:
                     doc_name = doc_name.replace('/', '\\')
             return doc_name
 
-        doc_path = Path(StaticPathTools.get_doc_path(kb_name)).resolve()    # 转化为绝对路径
+        doc_path = Path(StaticPathTools.get_raw_path(kb_name)).resolve()    # 转化为绝对路径
         full_path = (doc_path / doc_name).resolve()
         if str(full_path).startswith(str(doc_path)):
             return str(full_path)

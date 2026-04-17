@@ -1,6 +1,8 @@
 import os
+from functools import lru_cache
 from typing import List
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
 from langchain_chroma import Chroma
 import chromadb
 from server import settings
@@ -10,7 +12,7 @@ class SimpleChromaKB:
     vs_path: str       # 向量文件存储路径
     
     embedding_model_name: str                       # 嵌入模型名称
-    embedding_function: chromadb.EmbeddingFunction  # 嵌入函数
+    embedding_function: Embeddings                  # 嵌入函数
 
     client: chromadb.PersistentClient       # Chroma 客户端
     template: Chroma                        # LangChain 包装器
@@ -19,7 +21,7 @@ class SimpleChromaKB:
             self, 
             kb_name: str, 
             vs_path: str = None, 
-            embedding_model_name: str = "bge-large-zh-v1.5"):  # 使用默认嵌入模型
+            embedding_model_name: str = settings.api_model_settings.DEFAULT_EMBEDDING_MODEL):
         
         # 1. 处理 vs 地址
         if vs_path is None:
@@ -29,21 +31,14 @@ class SimpleChromaKB:
         if not os.path.exists(self.vs_path):
             os.makedirs(self.vs_path)
 
-        # 2. 处理嵌入模型，使用本地模型避免API依赖
+        # 2. 处理嵌入模型，统一使用智谱的 embedding-3 模型
         self.embedding_model_name = embedding_model_name
         try:
-            # 尝试使用智谱AI模型（需要API密钥）
             from langchain_openai import OpenAIEmbeddings
-            from dotenv import load_dotenv
-            load_dotenv()
-            api_key = os.getenv("ZHIPUAI_API_KEY")
-            if api_key:
-                self.embedding_function = OpenAIEmbeddings(
-                    model=self.embedding_model_name, 
-                    api_key=api_key,
-                    base_url="https://open.bigmodel.cn/api/paas/v4")    # 指向智谱的 API 地址
-            else:
-                raise ImportError("未设置ZHIPUAI_API_KEY")
+            # 客户端会自己在环境变量找值
+            os.environ["OPENAI_API_KEY"] = settings.platform_config.api_key
+            os.environ["OPENAI_API_BASE"] = settings.platform_config.api_embedding_base_url
+            self.embedding_function = OpenAIEmbeddings(model=self.embedding_model_name)
         except Exception as e:
             print(f"使用智谱AI模型时出错: {e}")
             # 回退到本地模型
@@ -52,7 +47,6 @@ class SimpleChromaKB:
             print("使用本地嵌入模型（BAAI/bge-small-zh-v1.5）")
 
         # 3. 初始化 Chroma 客户端和 LangChain 提供的包装器
-        # 
         self.client = chromadb.PersistentClient(path=self.vs_path)        
         self.template = Chroma(
             client=self.client,
@@ -93,12 +87,12 @@ class SimpleChromaKB:
             
             # 4. 将切分后的文档片段添加到向量数据库中
             if texts:
-                return self.add_documents(docs)
+                return self.add_documents(texts)
             else:
                 print(f"文件 {file_path} 处理后未产生任何文档片段。")
                 return []
         except Exception as e:
-            print(f"添加文件 {file_path} 到知识库 {self.kb_name} 时出错: {e}")
+            print(f"处理文件 {file_path} 到知识库 {self.kb_name} 时出错: {e}")
             return []
 
     def search(self, query: str, top_k: int = 3, score_threshold: float = 1) -> List[Document]:
@@ -135,7 +129,7 @@ if __name__ == "__main__":
     # 初始化知识库
     my_kb = SimpleChromaKB(
         kb_name="test_kb",
-        embedding_model_name="embedding-2"
+        embedding_model_name="embedding-3"
     )
     
     # 准备几个文档对象 (你可以用你之前学到的 loader 和 splitter 生成这些对象)

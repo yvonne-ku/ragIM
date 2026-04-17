@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-import time
 
 # 设置页面标题和图标
 st.set_page_config(

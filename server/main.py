@@ -1,22 +1,22 @@
-from server.settings import kb_settings
+import os
+
 from server.utils import logger
 from server import settings
 from server.kb_service.chromadb_service import get_kb
 from server.utils import StaticPathTools
 
 def init_backend(
-        plat_form_url: str = settings.platform_config.api_base_url,
+        plat_form_url: str = settings.platform_config.api_llm_base_url,
         llm_model: str = settings.api_model_settings.DEFAULT_LLM_MODEL,
         embedding_model: str = settings.api_model_settings.DEFAULT_EMBEDDING_MODEL,
         recreate_kb: bool = False,
-        kb_name: str = settings.api_model_settings.DEFAULT_KB_NAME,
+        kb_name: str = settings.kb_settings.DEFAULT_KNOWLEDGE_BASE,
 ):
     """初始化项目后端"""
     bs = settings.basic_settings
-    ks = settings.kb_settings
 
     # 1. 初始化项目目录结构
-    logger.info(f"开始初始化项目目录结构，项目根目录：{bs.RAGIM_ROOT}")
+    logger.info(f"开始初始化项目目录结构，项目根目录：{settings.RAGIM_ROOT}")
     bs.make_dirs()
     logger.info("项目目录结构初始化完成")
 
@@ -28,13 +28,13 @@ def init_backend(
     # 3. 启动参数覆盖默认配置
     logger.info("开始将启动参数覆盖默认配置")
     if plat_form_url:
-        settings.platform_config.api_base_url = plat_form_url
+        settings.platform_config.api_llm_base_url = plat_form_url
     if llm_model:
         settings.api_model_settings.DEFAULT_LLM_MODEL = llm_model
     if embedding_model:
         settings.api_model_settings.DEFAULT_EMBEDDING_MODEL = embedding_model
     if kb_name:
-        settings.api_model_settings.DEFAULT_KB_NAME = kb_name
+        settings.kb_settings.DEFAULT_KNOWLEDGE_BASE = kb_name
     logger.info("启动参数覆盖默认配置完成")
 
     # 4. 构建向量库
@@ -67,3 +67,11 @@ def init_backend(
             logger.info(f"文件 {file_name} 导入并向量化成功")
         logger.info(f"知识库 {kb_name} 初始化/重建完成")
 
+
+if __name__ == "__main__":
+    init_backend(
+        recreate_kb=True,  # 重建知识库
+        kb_name="samples",  # 使用 samples 知识库
+        llm_model="glm-4-plus",  # 使用 glm-4-plus 模型
+        embedding_model="embedding-3"  # 使用 embedding-3 嵌入模型
+    )

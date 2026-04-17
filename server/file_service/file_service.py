@@ -1,13 +1,12 @@
 import importlib
-import os
 
-from typing import Dict, Generator, List, Tuple, Union
+import os
+from typing import Dict, Generator, List
 from functools import lru_cache
 from pathlib import Path
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
 from langchain.text_splitter import MarkdownHeaderTextSplitter, TextSplitter
 from langchain_community.document_loaders import JSONLoader, TextLoader
-from pprint import pprint
 import chardet
 
 from server import settings
@@ -124,7 +123,7 @@ class StaticLoaderAndSplitterTools:
         loader = DocumentLoader(file_path, **loader_kwargs)
         return loader
 
-
+    @staticmethod
     @lru_cache()
     def make_text_splitter(splitter_name, chunk_size, chunk_overlap):
         """
@@ -141,21 +140,20 @@ class StaticLoaderAndSplitterTools:
         if splitter_name == "" or splitter_name is None:
             splitter_name = "SpacyTextSplitter"
         try:
-            # ========== 核心逻辑：动态加载切分器类 ========== 
-            # 1. 优先导入自定义切分器模块
+            # 1. 优先从自定义切分器模块获取
             try: 
                 text_splitter_module = importlib.import_module("server.file_service.text_splitter")
                 TextSplitter = getattr(text_splitter_module, splitter_name)
-            # 2. 否则使用 langchain 的切分器
+
+            # 2. 否则从 langchain 的切分器模块获取
             except:  
                 text_splitter_module = importlib.import_module(
                     "langchain.text_splitter"
                 )
                 TextSplitter = getattr(text_splitter_module, splitter_name)
 
-            # ========== 切分器实例化：按不同数据源类型适配参数 ==========
-            # 从配置中获取当前切分器的来源类型（tiktoken/huggingface/默认），来源不同参数不同
-            # 1. 来自 tiktoken 的切分器
+            # 3. 从配置中获取当前切分器的来源类型（tiktoken/huggingface/默认），来源不同参数不同
+            # 3.1 来自 tiktoken 的切分器
             if (settings.kb_settings.text_splitter_dict[splitter_name]["source"] == "tiktoken"):
                 try:
                     text_splitter = TextSplitter.from_tiktoken_encoder(
@@ -174,7 +172,7 @@ class StaticLoaderAndSplitterTools:
                         chunk_size=chunk_size,
                         chunk_overlap=chunk_overlap,
                     )
-            # 2. 来自 huggingface 的切分器
+            # 3.2 来自 huggingface 的切分器
             elif (settings.kb_settings.text_splitter_dict[splitter_name]["source"] == "huggingface"):
                 if (settings.kb_settings.text_splitter_dict[splitter_name]["tokenizer_name_or_path"] == "gpt2"):
                     from langchain.text_splitter import CharacterTextSplitter
@@ -191,7 +189,8 @@ class StaticLoaderAndSplitterTools:
                     chunk_size=chunk_size,
                     chunk_overlap=chunk_overlap,
                 )
-            # 3. 默认切分器
+
+            # 3.3 默认切分器
             else:
                 try:
                     text_splitter = TextSplitter(
@@ -242,7 +241,7 @@ class KnowledgeFile:
             knowledge_base_name: 关联的知识库名称。
             loader_kwargs: 加载器的参数字典，默认为空。
         """
-        # 文件名处理
+        # 文件名处理，并获取 ext
         self.kb_name = kb_name
         self.doc_name = str(Path(file_path).as_posix())    # 封装处理文件路径，兼容不同操作系统
         self.ext = os.path.splitext(file_path)[-1].lower()  
@@ -250,7 +249,7 @@ class KnowledgeFile:
             raise ValueError(f"暂未支持的文件格式 {self.doc_name}")
         self.doc_path = StaticPathTools.get_full_path(kb_name, self.doc_name)  # 完整的文件名
        
-        # Loader 和 Spliter 设置
+        # Loader 和 Spliter 按照 ext 设置
         self.loader_kwargs = loader_kwargs
         self.loader_name = StaticLoaderAndSplitterTools.get_loaderClass(self.ext)
         self.text_splitter_name = settings.kb_settings.TEXT_SPLITTER_NAME
@@ -307,7 +306,7 @@ class KnowledgeFile:
         if not docs:
             return []
         
-        # 仅对非CSV文件进行切分（CSV文件通常按行处理，无需额外切分）
+        # 仅对非 CSV 文件进行切分（CSV文件通常按行处理，无需额外切分）
         if self.ext not in [".csv"]:
             if text_splitter is None:
                 text_splitter = StaticLoaderAndSplitterTools.make_text_splitter(

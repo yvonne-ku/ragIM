@@ -7,11 +7,16 @@ import typing as t
 
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from dotenv import load_dotenv
 
 from server import __version__
 
 RAGIM_ROOT: Path = Path(os.environ.get("RAGIM_ROOT", "..")).resolve()
 SERVER_ROOT: Path = RAGIM_ROOT / "server"
+
+
+# 加载 .env 环境变量
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
 
 
 # 项目基础配置
@@ -177,9 +182,8 @@ class KBSettings(BaseSettings):
     为不同的文本分割器提供配置参数
     """
 
-    # TEXT_SPLITTER_NAME: str = "ChineseRecursiveTextSplitter"
     TEXT_SPLITTER_NAME: str = "RecursiveCharacterTextSplitter"
-    """指定默认使用的文本分割器，第一个是中文默认分割器，第二个是英文默认分割器"""
+    """指定默认使用的文本分割器，是英文默认分割器"""
 
     EMBEDDING_KEYWORD_FILE: str = "embedding_keywords.txt"
     """指定 Embedding 模型（向量模型）的自定义词表文件路径 —— 可以添加领域专属词汇，提升模型对专业术语的向量表示精度。"""
@@ -195,7 +199,10 @@ class PlatformConfig(BaseModel):
     platform_type: t.Literal["xinference", "ollama", "oneapi", "fastchat", "openai", "custom openai"] = "custom openai"
     """平台类型"""
 
-    api_base_url: str = "https://open.bigmodel.cn/api/paas/v4"
+    api_llm_base_url: str = "https://open.bigmodel.cn/api/paas/v4"
+    """openai api url"""
+
+    api_embedding_base_url: str = "https://open.bigmodel.cn/api/paas/v4/embeddings"
     """openai api url"""
 
     api_key: str = os.getenv("ZHIPUAI_API_KEY")
@@ -266,7 +273,7 @@ class ApiModelSettings(BaseSettings):
             "platform_name": "zhipuai",
             "platform_type": "custom openai",
             "api_base_url": "https://open.bigmodel.cn/api/paas/v4",
-            "api_key": os.getenv("ZHIPUAI_API_KEY"),
+            "api_key": os.getenv("ZHIPUAI_API_KEY",""),
         }),
     ]
     """模型平台配置"""
