@@ -92,17 +92,20 @@ class SimpleChromaKB:
 
         # 3. Get Singleton Embeddings
         self.embedding_model_name = embedding_model_name or settings.api_model_settings.DEFAULT_EMBEDDING_MODEL
+        
+        # Get model configuration
+        model_config = settings.api_model_settings.MODELS.get(self.embedding_model_name)
+        platform_name = model_config.platform_name if model_config else "zhipuai"
+        
+        # Get platform configuration
         target_key = None
         target_url = None
         for platform in settings.api_model_settings.MODEL_PLATFORMS:
-            if "embedding-3" in self.embedding_model_name and platform.platform_name == "zhipuai":
+            if platform.platform_name == platform_name:
                 target_key = platform.api_key
                 target_url = platform.api_embedding_base_url
                 break
-            if "text-embedding" in self.embedding_model_name and platform.platform_name == "openai":
-                target_key = platform.api_key
-                target_url = platform.api_embedding_base_url
-                break
+        
         self.embedding_function = ChromaResourceManager.get_embeddings(
             model_name=self.embedding_model_name,
             api_key=target_key,

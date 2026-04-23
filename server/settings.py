@@ -179,24 +179,42 @@ class KBSettings(BaseSettings):
     """指定 Embedding 模型（向量模型）的自定义词表文件路径 —— 可以添加领域专属词汇，提升模型对专业术语的向量表示精度。"""
 
 
-# 定义模型加载平台相关配置
 class PlatformConfig(BaseModel):
     """模型加载平台配置"""
 
-    platform_name: str = "zhipuai"
+    platform_name: str
     """平台名称"""
 
-    platform_type: t.Literal["xinference", "ollama", "oneapi", "fastchat", "openai", "custom openai"] = "custom openai"
-    """平台类型"""
+    base_url: str
+    """BASE URL"""
 
-    api_llm_base_url: str = "https://open.bigmodel.cn/api/paas/v4"
-    """openai api url"""
+    api_key: str
+    """API key"""
 
-    api_embedding_base_url: str = "https://open.bigmodel.cn/api/paas/v4/embeddings"
-    """openai api url"""
 
-    api_key: str = os.getenv("ZHIPUAI_API_KEY")
-    """api key if available"""
+class ModelConfig(BaseModel):
+    """模型配置"""
+
+    model_name: str
+    """模型名称"""
+
+    platform_name: str
+    """所属平台"""
+
+    temperature: float = 0.7
+    """温度参数"""
+
+    max_tokens: int = 4096
+    """最大 tokens"""
+
+    history_len: int = 10
+    """历史消息长度"""
+
+    prompt_name: str = "default"
+    """提示词模板名称"""
+
+    callbacks: bool = True
+    """是否启用回调"""
 
 
 # 定义模型配置项
@@ -205,72 +223,69 @@ class ApiModelSettings(BaseSettings):
 
     model_config = SettingsConfigDict(yaml_file=RAGIM_ROOT / "model_settings.yaml")
 
-    DEFAULT_LLM_MODEL: str = "glm-4-plus"
-    """默认选用的 LLM 名称"""
-
     DEFAULT_EMBEDDING_MODEL: str = "BAAI/bge-m3"
     """默认选用的 Embedding 名称"""
 
-    TEMPERATURE: float = 0.7
-    """LLM 通用对话参数"""
+    DEFAULT_EXTRACT_ENTITY_MODEL: str = "GPT-4o-mini"
+    """默认选用的实体关系抽取模型"""
 
-    LLM_MODEL_CONFIG: t.Dict[str, t.Dict] = {
-        # 意图识别不需要输出，模型后台知道就行
-        "preprocess_model": {
-            "model": "",
-            "temperature": 0.05,
-            "max_tokens": 4096,
-            "history_len": 10,
-            "prompt_name": "default",
-            "callbacks": False,
-        },
-        "llm_model": {
-            "model": "",
-            "temperature": 0.9,
-            "max_tokens": 4096,
-            "history_len": 10,
-            "prompt_name": "default",
-            "callbacks": True,
-        },
-        "action_model": {
-            "model": "",
-            "temperature": 0.01,
-            "max_tokens": 4096,
-            "history_len": 10,
-            "prompt_name": "ChatGLM3",
-            "callbacks": True,
-        },
-        "postprocess_model": {
-            "model": "",
-            "temperature": 0.01,
-            "max_tokens": 4096,
-            "history_len": 10,
-            "prompt_name": "default",
-            "callbacks": True,
-        },
-        "image_model": {
-            "model": "sd-turbo",
-            "size": "256*256",
-        },
-    }
-    """
-    LLM 模型配置，
-    包括了不同用途的 LLM 初始化参数。
-    """
+    DEFAULT_LLM_MODEL: str = "glm-4-plus"
+    """默认选用的 LLM 名称"""
 
     MODEL_PLATFORMS: t.List[PlatformConfig] = [
-        PlatformConfig(**{
-            "platform_name": "zhipuai",
-            "api_embedding_base_url": "https://open.bigmodel.cn/api/paas/v4",
-            "api_key": os.getenv("ZHIPUAI_API_KEY", ""),
-        }),
-        PlatformConfig(**{
-            "platform_name": "openai",
-            "api_embedding_base_url": "https://api.openai.com/v1",
-            "api_key": os.getenv("OPENAI_API_KEY", ""),
-        }),
+        PlatformConfig(
+            platform_name="zhipuai",
+            base_url="https://open.bigmodel.cn/api/paas/v4",
+            api_key=os.getenv("ZHIPUAI_API_KEY", ""),
+        ),
+        PlatformConfig(
+            platform_name="openai",
+            base_url="https://api.openai.com/v1",
+            api_key=os.getenv("OPENAI_API_KEY", ""),
+        ),
     ]
     """模型平台配置"""
+
+    MODELS: t.Dict[str, ModelConfig] = {
+        "BAAI/bge-m3": ModelConfig(
+            model_name="BAAI/bge-m3",
+            platform_name="local",  # 本地模型
+            temperature=0.0,
+            max_tokens=4096,
+            history_len=0,
+            prompt_name="default",
+            callbacks=False,
+        ),
+        "GPT-4o-mini": ModelConfig(
+            model_name="GPT-4o-mini",
+            platform_name="openai",
+            temperature=0.3,
+            max_tokens=4096,
+            history_len=10,
+            prompt_name="default",
+            callbacks=True,
+        ),
+        "glm-4-plus": ModelConfig(
+            model_name="glm-4-plus",
+            platform_name="zhipuai",
+            temperature=0.7,
+            max_tokens=4096,
+            history_len=10,
+            prompt_name="default",
+            callbacks=True,
+        ),
+    }
+    """模型配置字典"""
+
+    SCENARIO_MODELS: t.Dict[str, str] = {
+        "embedding": "BAAI/bge-m3",
+        "extract_entity": "GPT-4o-mini",
+        "preprocess": "glm-4-plus",
+        "llm": "glm-4-plus",
+        "action": "glm-4-plus",
+        "postprocess": "glm-4-plus",
+    }
+    """不同场景使用的模型"""
 
 
 # 定义 Prompt 模板
@@ -298,6 +313,5 @@ class PromptSettings(BaseSettings):
 
 basic_settings = BasicSettings()
 kb_settings = KBSettings()
-platform_config = PlatformConfig()
 api_model_settings = ApiModelSettings()
 prompt_settings = PromptSettings()

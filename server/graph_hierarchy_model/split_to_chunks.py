@@ -7,7 +7,7 @@ def count_tokens(text: str, model: str = "gpt-3.5-turbo") -> int:
     return len(encoding.encode(text))
 
 """
- - max_chunk_size
+ - chunk_size
  - overlap
 """
 def split_into_chunks(json_file_path: str, output_path: str):
@@ -18,8 +18,8 @@ def split_into_chunks(json_file_path: str, output_path: str):
     messages = data.get("content", [])
 
 
-    max_chunk_size = 600      # 建议 500~800
-    overlap = 1         # 与前一个 chunk 重叠的消息条数
+    chunk_size = 600      # 建议 500~800
+    overlap = 2           # 与前一个 chunk 重叠的消息条数
     model = "gpt-3.5-turbo"
 
     # 分块
@@ -30,7 +30,7 @@ def split_into_chunks(json_file_path: str, output_path: str):
         msg_text = msg.get("text", "")
         msg_tokens = count_tokens(msg_text, model)    # 只会本地计算，不会调用 API
 
-        if current_tokens + msg_tokens > max_chunk_size and current_chunk:
+        if current_tokens + msg_tokens > chunk_size and current_chunk:
             chunks.append(current_chunk)
 
             # 重叠处理：新 chunk 从前一个 chunk 的最后 overlap 条消息开始
@@ -48,7 +48,7 @@ def split_into_chunks(json_file_path: str, output_path: str):
     output = {
         "window_id": window_id,
         "method": "graph_hierarchy_split",
-        "max_chunk_size": max_chunk_size,
+        "chunk_size": chunk_size,
         "overlap": overlap,
         "chunks": []
     }

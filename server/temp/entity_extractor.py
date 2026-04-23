@@ -7,11 +7,29 @@ from resources.others.utils import logger
 
 class EntityExtractor:
     def __init__(self, model_name: str = None):
-        self.model_name = model_name or settings.api_model_settings.DEFAULT_LLM_MODEL
+        # Get model name from scenario mapping or use default
+        scenario_model = settings.api_model_settings.SCENARIO_MODELS.get("extract_entity")
+        self.model_name = model_name or scenario_model or settings.api_model_settings.DEFAULT_LLM_MODEL
+        
+        # Get model configuration
+        model_config = settings.api_model_settings.MODELS.get(self.model_name)
+        platform_name = model_config.platform_name if model_config else "zhipuai"
+        
+        # Get platform configuration
+        platform_config = None
+        for platform in settings.api_model_settings.MODEL_PLATFORMS:
+            if platform.platform_name == platform_name:
+                platform_config = platform
+                break
+        
+        # Get temperature from model config or use default
+        temperature = model_config.temperature if model_config else 0.1
+        
+        # Initialize LLM
         self.llm = ChatZhipuAI(
-            api_key=settings.platform_config.api_key,
+            api_key=platform_config.api_key if platform_config else settings.api_model_settings.MODEL_PLATFORMS[0].api_key,
             model=self.model_name,
-            temperature=0.1,  # 低温度保证抽取稳定性
+            temperature=temperature,  # 低温度保证抽取稳定性
         )
         
         self.extract_prompt = ChatPromptTemplate.from_template("""
