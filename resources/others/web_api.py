@@ -1,6 +1,4 @@
-from fastapi import FastAPI
-from server.chat_service.chat_service import chat_service
-
+from resources.others import chat_service
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

@@ -1,9 +1,9 @@
 import os
 
-from server.utils import logger
+from resources.others.utils import logger
 from server import settings
-from server.kb_service.chromadb_service import get_kb
-from server.utils import StaticPathTools
+from server.kb_singleton_util import get_kb
+from resources.others.utils import StaticPathTools
 
 def init_backend(
         plat_form_url: str = settings.platform_config.api_llm_base_url,
@@ -73,5 +73,5 @@ if __name__ == "__main__":
         recreate_kb=True,  # 重建知识库
         kb_name="samples",  # 使用 samples 知识库
         llm_model="glm-4-plus",  # 使用 glm-4-plus 模型
-        embedding_model="embedding-3"  # 使用 embedding-3 嵌入模型
+        embedding_model="BAAI/bge-m3"  # 使用 BGE-M3 嵌入模型
     )

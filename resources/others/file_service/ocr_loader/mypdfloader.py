@@ -3,11 +3,10 @@ from typing import List
 import cv2
 import numpy as np
 import tqdm
-from langchain_core.documents import Document
 from langchain_community.document_loaders.unstructured import UnstructuredFileLoader
 from PIL import Image
 
-from server.file_service.ocr_loader.ocr import get_ocr
+from resources.others.file_service.ocr_loader.ocr import get_ocr
 from server import settings
 
 

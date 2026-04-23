@@ -1,9 +1,7 @@
-import logging
 import re
 from typing import Any, List, Optional
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from server.utils import logger
 
 
 def _split_text_with_regex_from_end(

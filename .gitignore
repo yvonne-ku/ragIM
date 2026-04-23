@@ -39,6 +39,8 @@ build/
 # --- 数据与向量存储（RAG 特有） ---
 # 原始文档目录（避免提交大文件）
 data/
+resources/nltk_data/
+
 
 # 向量数据库持久化目录（如 Chroma、FAISS 索引）
 vector_store/
@@ -67,5 +69,5 @@ Thumbs.db
 # 如果使用 Jupyter 检查点
 .ipynb_checkpoints/
 
-# 参考文件
-参考/
+# 项目内文件
+

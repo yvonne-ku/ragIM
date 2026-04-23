@@ -1,19 +1,18 @@
 import importlib
 
-import os
-from typing import Dict, Generator, List
+from typing import Dict, List
 from functools import lru_cache
 from pathlib import Path
 from langchain_core.documents import Document
-from langchain.text_splitter import MarkdownHeaderTextSplitter, TextSplitter
-from langchain_community.document_loaders import JSONLoader, TextLoader
+from langchain.text_splitter import TextSplitter
+from langchain_community.document_loaders import TextLoader
 import chardet
 
 from server import settings
-from server.file_service.text_splitter import (
+from resources.others.file_service.text_splitter import (
     zh_title_enhance as func_zh_title_enhance,
 )
-from server.utils import StaticPathTools, logger
+from resources.others.utils import StaticPathTools, logger
 
 
 class StaticLoaderAndSplitterTools:
@@ -337,7 +336,7 @@ if __name__ == "__main__":
 
     # 创建文件处理对象
     kb_file = KnowledgeFile(
-        file_path="d:\\MyProjects\\ragIM\\test\\samples\\1706.03762v7.pdf", 
+        file_path="/test/samples/1706.03762v7.pdf",
         kb_name="samples"
     )
 

@@ -1,5 +1,6 @@
 import json
 import os
+from server import settings
 
 def naive_split(input_path, output_path, chunk_size=500):
     """
@@ -35,12 +36,20 @@ def naive_split(input_path, output_path, chunk_size=500):
     if current_chunk:
         chunks.append(current_chunk)
 
-    # Save as a list of chunks, where each chunk is a list of messages
+    # Save as a list of chunks, where each chunk is an object with chunk_id and messages
+    formatted_chunks = []
+    for i, chunk in enumerate(chunks):
+        chunk_id = f"chunk_{i+1:05d}"
+        formatted_chunks.append({
+            "chunk_id": chunk_id,
+            "messages": chunk
+        })
+    
     result = {
         "window_id": data.get("window_id", "1"),
         "method": "naive_baseline",
         "chunk_size": chunk_size,
-        "chunks": chunks
+        "chunks": formatted_chunks
     }
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -51,10 +60,7 @@ def naive_split(input_path, output_path, chunk_size=500):
     print(f"Result saved to {output_path}")
 
 if __name__ == "__main__":
-    # Base paths
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(os.path.dirname(current_dir)) # ragIM
-    input_file = os.path.join(project_root, "data", "knowledge_base", "samples", "content", "ubuntu_all.json")
-    output_file = os.path.join(current_dir, "ubuntu_naive_split.json")
+    input_file = os.path.join(settings.basic_settings.RAW_JSON_PATH, "ubuntu_all.json")
+    output_file = os.path.join(settings.basic_settings.CHUNKS_PATH, "ubuntu_naive_split.json")
 
     naive_split(input_file, output_file)

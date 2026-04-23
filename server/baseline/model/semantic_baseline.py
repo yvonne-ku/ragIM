@@ -2,6 +2,7 @@ import json
 import os
 import numpy as np
 from sentence_transformers import SentenceTransformer, util
+from server import settings
 
 def semantic_split(input_path, output_path, buffer_size=1, threshold_percentile=90):
     """
@@ -25,8 +26,8 @@ def semantic_split(input_path, output_path, buffer_size=1, threshold_percentile=
         return
 
     # 1. Initialize Embeddings
-    print(f"Loading model: BAAI/bge-base-en-v1.5...")
-    model = SentenceTransformer('BAAI/bge-base-en-v1.5')
+    print(f"Loading model: BAAI/bge-m3...")
+    model = SentenceTransformer('BAAI/bge-m3')
 
     # 2. Build windows and get embeddings
     print("Encoding windows...")
@@ -62,12 +63,21 @@ def semantic_split(input_path, output_path, buffer_size=1, threshold_percentile=
         chunks.append(current_chunk)
 
     # 6. Save results
+    # Format chunks with chunk_id
+    formatted_chunks = []
+    for i, chunk in enumerate(chunks):
+        chunk_id = f"chunk_{i+1:05d}"
+        formatted_chunks.append({
+            "chunk_id": chunk_id,
+            "messages": chunk
+        })
+    
     result = {
         "window_id": data.get("window_id", "1"),
         "method": "semantic_baseline",
         "buffer_size": buffer_size,
         "threshold_percentile": float(threshold_percentile),
-        "chunks": chunks
+        "chunks": formatted_chunks
     }
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -78,8 +88,7 @@ def semantic_split(input_path, output_path, buffer_size=1, threshold_percentile=
     print(f"Result saved to {output_path}")
 
 if __name__ == "__main__":
-    # Base paths
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    input_file = os.path.join("D:\\MyProjects\\ragIM\\data\\knowledge_base", "samples", "content", "ubuntu_all.json")
-    output_file = os.path.join(current_dir, "ubuntu_semantic_split.json")
+    input_file = os.path.join(settings.basic_settings.RAW_JSON_PATH, "ubuntu_all.json")
+    output_file = os.path.join(settings.basic_settings.CHUNKS_PATH, "ubuntu_semantic_split.json")
+
     semantic_split(input_file, output_file)

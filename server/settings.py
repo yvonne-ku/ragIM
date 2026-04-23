@@ -11,8 +11,9 @@ from dotenv import load_dotenv
 
 from server import __version__
 
-RAGIM_ROOT: Path = Path(os.environ.get("RAGIM_ROOT", "..")).resolve()
-SERVER_ROOT: Path = RAGIM_ROOT / "server"
+# 计算项目根目录，基于当前文件的位置
+SERVER_ROOT: Path = Path(__file__).parent.resolve()
+RAGIM_ROOT: Path = SERVER_ROOT.parent.resolve()
 
 
 # 加载 .env 环境变量
@@ -27,27 +28,18 @@ class BasicSettings(BaseSettings):
 
     # 项目目录结构信息
     DATA_ROOT: Path = RAGIM_ROOT / "data"
-    NLTK_DATA_PATH: Path = DATA_ROOT / "nltk_data"    # NLTK 数据目录
-    KB_ROOT: Path = DATA_ROOT / "knowledge_base"      # 知识库根目录
-    MEDIA_PATH: Path = DATA_ROOT / "media"            # 模型生成内容（图片、视频、音频等）保存位置
-    LOG_ROOT: Path = DATA_ROOT / "logs"
-    TEMP_PATH: Path = DATA_ROOT / "temp"               # 临时文件目录
-
+    OUTPUT_PATH: Path = DATA_ROOT / "output_results"
+    VS_PATH: Path = DATA_ROOT / "vector_store"
+    RAW_JSON_PATH: Path = DATA_ROOT / "raw_json_data"
+    CHUNKS_PATH: Path = DATA_ROOT / "processed_chunks"
+    NLTK_DATA_PATH: Path = RAGIM_ROOT / "resources" / "nltk_data"    # NLTK 数据目录
     os.environ["NLTK_DATA"] = str(NLTK_DATA_PATH)
 
     def make_dirs(self):
-        '''创建所有数据目录'''
-        for p in [
-            self.DATA_ROOT,
-            self.MEDIA_PATH,
-            self.LOG_ROOT,
-            self.TEMP_PATH,
-        ]:
-            p.mkdir(parents=True, exist_ok=True)
-        for n in ["image", "audio", "video"]:
-            (self.MEDIA_PATH / n).mkdir(parents=True, exist_ok=True)
-        Path(self.KB_ROOT).mkdir(parents=True, exist_ok=True)
-
+        """初始化项目所有需要的目录"""
+        for path in [self.DATA_ROOT, self.OUTPUT_PATH, self.VS_PATH, self.RAW_JSON_PATH, self.CHUNKS_PATH, self.NLTK_DATA_PATH]:
+            if not os.path.exists(path):
+                os.makedirs(path)
 
     # 服务器信息
     OPEN_CROSS_DOMAIN: bool = False
@@ -67,8 +59,6 @@ class BasicSettings(BaseSettings):
     WEBUI_SERVER: dict = {"host": DEFAULT_BIND_HOST, "port": 8501}
     """WEB UI 服务器地址"""
 
-    SQLALCHEMY_DATABASE_URI: str = "sqlite:///" + str(KB_ROOT / "info.db")
-    """内嵌DB，记录KB的元数据"""
 
 
 # 知识库相关配置
@@ -218,7 +208,7 @@ class ApiModelSettings(BaseSettings):
     DEFAULT_LLM_MODEL: str = "glm-4-plus"
     """默认选用的 LLM 名称"""
 
-    DEFAULT_EMBEDDING_MODEL: str = "embedding-3"
+    DEFAULT_EMBEDDING_MODEL: str = "BAAI/bge-m3"
     """默认选用的 Embedding 名称"""
 
     TEMPERATURE: float = 0.7
@@ -271,9 +261,13 @@ class ApiModelSettings(BaseSettings):
     MODEL_PLATFORMS: t.List[PlatformConfig] = [
         PlatformConfig(**{
             "platform_name": "zhipuai",
-            "platform_type": "custom openai",
-            "api_base_url": "https://open.bigmodel.cn/api/paas/v4",
-            "api_key": os.getenv("ZHIPUAI_API_KEY",""),
+            "api_embedding_base_url": "https://open.bigmodel.cn/api/paas/v4",
+            "api_key": os.getenv("ZHIPUAI_API_KEY", ""),
+        }),
+        PlatformConfig(**{
+            "platform_name": "openai",
+            "api_embedding_base_url": "https://api.openai.com/v1",
+            "api_key": os.getenv("OPENAI_API_KEY", ""),
         }),
     ]
     """模型平台配置"""

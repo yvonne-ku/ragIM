@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import uuid
-from typing import AsyncIterable, List, Optional
+from typing import AsyncIterable, Optional
 
 from fastapi import Body
 from fastapi.concurrency import run_in_threadpool
@@ -13,7 +13,7 @@ from langchain_community.chat_models import ChatZhipuAI
 
 from server.kb_service.chromadb_service import get_kb
 from server import settings
-from server.utils import logger
+from resources.others.utils import logger
 
 
 async def chat_service(
