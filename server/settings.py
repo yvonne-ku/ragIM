@@ -230,6 +230,9 @@ class ApiModelSettings(BaseSettings):
     DEFAULT_EXTRACT_ENTITY_MODEL: str = "GPT-4o-mini"
     """默认选用的实体关系抽取模型"""
 
+    DEFAULT_SUMMARY_MODEL: str = "GPT-4o-mini"
+    """默认选用的摘要模型"""
+
     DEFAULT_LLM_MODEL: str = "glm-4-plus"
     """默认选用的 LLM 名称"""
 
@@ -326,20 +329,20 @@ class PromptSettings(BaseSettings):
             "JSON Output:\n"
         ),
     }
-    '''实体关系提取用模板，用于从对话中提取实体和关系''' 
-    
+    '''实体关系提取用模板，用于从对话中提取实体和关系'''
+
     community_summary: dict = {
         "default": (
-            "You are a knowledge synthesis assistant. Below is a community of entities and conversation snippets extracted from a dialogue corpus.\n\n"
-            "Your task is to write a **concise summary** (no more than 150 words) that captures the central topic and key entities discussed within this community.\n\n"
-            "Entities in this community:\n"
-            "{{entities}}\n\n"
-            "Sample conversation snippets:\n"
-            "{{text_snippets}}\n\n"
+            "You are a knowledge synthesis assistant. Below is a community of entities, their relationships, and conversation snippets extracted from a dialogue corpus.\n\n"
+            "Your task is to write a **concise summary** (no more than 150 words) that captures the central topic and key entities discussed within this community. "
+            "Use the provided relationships to understand how entities are connected.\n\n"
+            "Entities:\n{{entities}}\n\n"
+            "Relationships:\n{{relations}}\n\n"
+            "Sample conversation snippets:\n{{text_snippets}}\n\n"
             "Community summary:\n"
         ),
     }
-    '''社区摘要生成用模板，用于为社区生成简洁摘要''' 
+    '''社区摘要生成用模板，用于为社区生成简洁摘要'''
 
 
 

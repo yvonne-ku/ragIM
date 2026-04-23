@@ -36,12 +36,12 @@ def extract_entities_relations_from_chunk(
     """
     Call LLM to extract entities and relations from one chunk.
     """
-    # Prepare prompt
+    # 1. Prepare prompt
     conv_text = format_conversation_text(messages)
     prompt = EXTRACT_ENTITY_PROMPT.format(conversation=conv_text)
     llm_messages = [{"role": "user", "content": prompt}]
 
-    # Call LLM API
+    # 2. Call LLM API
     from langchain_openai import ChatOpenAI
     platform_config = settings.api_model_settings.MODEL_PLATFORMS.get("openai")
     model_config = settings.api_model_settings.MODELS.get(model)
@@ -53,7 +53,7 @@ def extract_entities_relations_from_chunk(
         )
     response = llm.invoke(llm_messages)
 
-    # Parse JSON from response
+    # 3. Parse JSON from response
     try:
         start = response.find("{")
         end = response.rfind("}") + 1
@@ -76,7 +76,7 @@ def build_graph_from_chunks(chunks_data: List[Dict[str, Any]], model: str) -> nx
     """
     G = nx.Graph()
 
-    # Build Chunk Nodes
+    # 1. Build Chunk Nodes
     for chunk in chunks_data:
         chunk_id = chunk["chunk_id"]
         G.add_node(chunk_id, type="chunk", chunk_id=chunk_id)
@@ -88,14 +88,15 @@ def build_graph_from_chunks(chunks_data: List[Dict[str, Any]], model: str) -> nx
 
         entities, relations = extract_entities_relations_from_chunk(messages, model)
 
-        # Build Entity Nodes And Connect To Chunk Nodes
+        # 2. Build Entity Nodes
+        # 3. Connect Entity Node To Chunk Node
         for ent_name in entities:
             ent_id = f"entity::{ent_name}"
             if ent_id not in G:
                 G.add_node(ent_id, type="entity", name=ent_name)
             G.add_edge(ent_id, chunk_id, relation="mentioned_in")
 
-        # Build Relation Edges
+        # 4. Connect Entity to Entity, Save Description
         for rel in relations:
             src_name = rel.get("source")
             tgt_name = rel.get("target")
