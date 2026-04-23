@@ -28,7 +28,8 @@ class BasicSettings(BaseSettings):
 
     # 项目目录结构信息
     DATA_ROOT: Path = RAGIM_ROOT / "data"
-    OUTPUT_PATH: Path = DATA_ROOT / "output_results"
+    OUTPUT_PATH: Path = DATA_ROOT / "outputs"
+    RESULTS_PATH: Path = DATA_ROOT / "results"
     VS_PATH: Path = DATA_ROOT / "vector_store"
     RAW_JSON_PATH: Path = DATA_ROOT / "raw_json_data"
     CHUNKS_PATH: Path = DATA_ROOT / "processed_chunks"
@@ -259,7 +260,7 @@ class ApiModelSettings(BaseSettings):
         "GPT-4o-mini": ModelConfig(
             model_name="GPT-4o-mini",
             platform_name="openai",
-            temperature=0.3,
+            temperature=0.0,
             max_tokens=4096,
             history_len=10,
             prompt_name="default",
@@ -326,6 +327,19 @@ class PromptSettings(BaseSettings):
         ),
     }
     '''实体关系提取用模板，用于从对话中提取实体和关系''' 
+    
+    community_summary: dict = {
+        "default": (
+            "You are a knowledge synthesis assistant. Below is a community of entities and conversation snippets extracted from a dialogue corpus.\n\n"
+            "Your task is to write a **concise summary** (no more than 150 words) that captures the central topic and key entities discussed within this community.\n\n"
+            "Entities in this community:\n"
+            "{{entities}}\n\n"
+            "Sample conversation snippets:\n"
+            "{{text_snippets}}\n\n"
+            "Community summary:\n"
+        ),
+    }
+    '''社区摘要生成用模板，用于为社区生成简洁摘要''' 
 
 
 

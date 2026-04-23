@@ -6,19 +6,12 @@ Output: graph.pkl (NetworkX graph) saved in output directory
 
 import os
 import json
+import pickle
+
 import networkx as nx
 from typing import List, Dict, Any, Tuple
 
 from server import settings
-from utils import (
-    load_config,
-    setup_openai,
-    call_llm,
-    ensure_dir,
-    save_pickle,
-    load_json,
-)
-
 
 EXTRACT_ENTITY_PROMPT = settings.prompt_settings.entity_extraction.get("default")
 
@@ -29,10 +22,10 @@ def format_conversation_text(messages: List[Dict[str, Any]]) -> str:
     """
     lines = []
     for msg in messages:
-        role = "User" if msg.get("from") == "user" else "Assistant"
+        sender = msg.get("from", "unknown")
         text = msg.get("text", "")
         if text:
-            lines.append(f"{role}: {text}")
+            lines.append(f"{sender}: {text}")
     return "\n".join(lines)
 
 
@@ -43,15 +36,22 @@ def extract_entities_relations_from_chunk(
     """
     Call LLM to extract entities and relations from one chunk.
     """
+    # Prepare prompt
     conv_text = format_conversation_text(messages)
-
-    # Skip very short snippets to save API calls
-    if len(conv_text.strip()) < 20:
-        return [], []
-
     prompt = EXTRACT_ENTITY_PROMPT.format(conversation=conv_text)
     llm_messages = [{"role": "user", "content": prompt}]
-    response = call_llm(llm_messages, model=model, temperature=0.0)
+
+    # Call LLM API
+    from langchain_openai import ChatOpenAI
+    platform_config = settings.api_model_settings.MODEL_PLATFORMS.get("openai")
+    model_config = settings.api_model_settings.MODELS.get(model)
+    llm = ChatOpenAI(
+            model=model,
+            api_key=platform_config.api_key if platform_config else None,
+            base_url=platform_config.api_llm_base_url if platform_config else None,
+            temperature=model_config.temperature if model_config else None,
+        )
+    response = llm.invoke(llm_messages)
 
     # Parse JSON from response
     try:
@@ -72,9 +72,11 @@ def extract_entities_relations_from_chunk(
 def build_graph_from_chunks(chunks_data: List[Dict[str, Any]], model: str) -> nx.Graph:
     """
     Build a global graph from all chunks.
+    Heterogeneous Graph: Have two kinds of nodes: chunk nodes and entity nodes.
     """
     G = nx.Graph()
 
+    # Build Chunk Nodes
     for chunk in chunks_data:
         chunk_id = chunk["chunk_id"]
         G.add_node(chunk_id, type="chunk", chunk_id=chunk_id)
@@ -86,14 +88,14 @@ def build_graph_from_chunks(chunks_data: List[Dict[str, Any]], model: str) -> nx
 
         entities, relations = extract_entities_relations_from_chunk(messages, model)
 
-        # Add entity nodes and connect to chunk
+        # Build Entity Nodes And Connect To Chunk Nodes
         for ent_name in entities:
             ent_id = f"entity::{ent_name}"
             if ent_id not in G:
                 G.add_node(ent_id, type="entity", name=ent_name)
             G.add_edge(ent_id, chunk_id, relation="mentioned_in")
 
-        # Add relation edges
+        # Build Relation Edges
         for rel in relations:
             src_name = rel.get("source")
             tgt_name = rel.get("target")
@@ -104,8 +106,6 @@ def build_graph_from_chunks(chunks_data: List[Dict[str, Any]], model: str) -> nx
 
             src_id = f"entity::{src_name}"
             tgt_id = f"entity::{tgt_name}"
-
-            # Ensure nodes exist
             if src_id not in G:
                 G.add_node(src_id, type="entity", name=src_name)
             if tgt_id not in G:
@@ -127,21 +127,38 @@ def build_graph_from_chunks(chunks_data: List[Dict[str, Any]], model: str) -> nx
 def detect_communities(G: nx.Graph, method: str = "leiden") -> Dict[str, int]:
     """
     Community detection. Falls back to Louvain if Leiden is not available.
+    return a dict like:
+        {
+            "chunk_00001": 0,
+            "chunk_00002": 0,
+            "entity::savings account": 0,
+            "entity::freelancer": 1,
+            "entity::business account": 1,
+            "chunk_00003": 1,
+            ...
+        }
+    the value is the index of the community.
     """
     if method == "leiden":
         try:
             import igraph as ig
             import leidenalg
 
+            # String nodes to integers for Leiden algorithm, chunk_00001 -> 0, entity::entity1 -> 1
             mapping = {node: i for i, node in enumerate(G.nodes())}
             rev_mapping = {i: node for node, i in mapping.items()}
+
+            # Convert to igraph graph
             ig_graph = ig.Graph()
             ig_graph.add_vertices(len(mapping))
             ig_graph.add_edges([(mapping[u], mapping[v]) for u, v in G.edges()])
 
+            # Run Leiden algorithm
             partition = leidenalg.find_partition(
                 ig_graph, leidenalg.ModularityVertexPartition
             )
+
+            # Map back to original node names, 0 -> chunk_00001, 1 -> entity::entity1
             communities = {
                 rev_mapping[i]: comm
                 for i, comm in enumerate(partition.membership)
@@ -162,35 +179,22 @@ def detect_communities(G: nx.Graph, method: str = "leiden") -> Dict[str, int]:
     return {}
 
 
-def main():
-    config = load_config()
-    setup_openai(config)
-
-    output_dir = config["paths"]["output_dir"]
-    ensure_dir(output_dir)
-
-    # --- Modify this if your chunked file name differs ---
-    input_json = os.path.join(output_dir, "chunked_conversation.json")
-    if not os.path.exists(input_json):
-        print(f"Error: chunked file {input_json} not found. Run chunking first.")
+def main(json_file_path: str, output_dir: str):
+    if not os.path.exists(json_file_path):
+        print(f"Error: chunked file {json_file_path} not found. Run chunking first.")
         return
-
-    chunks_data = load_json(input_json)
-    if "chunks" not in chunks_data:
-        print("Error: input JSON missing 'chunks' key.")
-        return
-
+    with open(json_file_path, 'r', encoding='utf-8') as f:
+        chunks_data = json.load(f)
     chunks_list = chunks_data["chunks"]
     print(f"Loaded {len(chunks_list)} chunks.")
 
-    # Use the model from settings
-    model = settings.api_model_settings.SCENARIO_MODELS.get("extract_entity", "GPT-4o-mini")
+    # 1. Build Graph
+    model = settings.api_model_settings.DEFAULT_EXTRACT_ENTITY_MODEL
     print(f"Using LLM model: {model}")
-
     G = build_graph_from_chunks(chunks_list, model)
 
-    # Community detection
-    method = config["graph"]["community_detection"]
+    # 2. Community detection By Leiden Algorithm
+    method = "leiden"
     print(f"Running {method} community detection...")
     node_communities = detect_communities(G, method)
     if node_communities:
@@ -199,11 +203,14 @@ def main():
     else:
         print("Community detection failed, graph will not have community info.")
 
-    # Save graph
+    # 3. Save graph
     graph_path = os.path.join(output_dir, "graph.pkl")
-    save_pickle(G, graph_path)
+    with open(graph_path, 'wb') as f:
+        pickle.dump(G, f, protocol=4)
     print(f"Graph saved to {graph_path}")
 
 
 if __name__ == "__main__":
-    main()
+    json_file_path = "D:\\MyProjects\\ragIM\\data\\processed_chunks\\ibm_graph_hierarchy_split.json"
+    output_dir = "D:\\MyProjects\\ragIM\\data\\outputs"
+    main(json_file_path, output_dir)

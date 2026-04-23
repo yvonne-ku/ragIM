@@ -193,8 +193,8 @@ def run_evaluation_for_baselines(json_path: str, kb_name: str):
         print(f"Precision: {avg_precision:.4f}")
         print(f"Recall: {avg_recall:.4f}")
     
-    # Save Result
-    output_dir = os.path.join(settings.basic_settings.OUTPUT_PATH)
+    # Save Evaluation Results
+    output_dir = os.path.join(settings.basic_settings.RESULTS_PATH)
     os.makedirs(output_dir, exist_ok=True)
 
     timestamp = time.strftime("%m_%d_%H_%M")
