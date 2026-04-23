@@ -9,6 +9,7 @@ import json
 import networkx as nx
 from typing import List, Dict, Any, Tuple
 
+from server import settings
 from utils import (
     load_config,
     setup_openai,
@@ -19,24 +20,7 @@ from utils import (
 )
 
 
-ENTITY_RELATION_PROMPT = """
-You are an expert in conversation analysis and knowledge extraction.
-Below is a dialogue between a user and an assistant. Your task is to extract all **important entities** and the **relations** among them.
-
-Definitions:
-- **Entity**: any significant noun phrase representing a concept, product, action, service, person, organization, financial term, or any domain-specific term mentioned in the conversation. Avoid trivial words.
-- **Relation**: a directed or undirected semantic connection between two entities. Use descriptive, concise phrases (e.g., "recommends", "is a type of", "belongs to", "results in", "avoids").
-
-Instructions:
-1. Keep entity names concise and canonical. Do not include entire sentences.
-2. Each relation must have `source`, `target`, and `description`.
-3. Output **only valid JSON** with two keys: `entities` (list of strings) and `relations` (list of objects with `source`, `target`, `description`). No extra commentary.
-
-Conversation:
-{conversation}
-
-JSON Output:
-"""
+EXTRACT_ENTITY_PROMPT = settings.prompt_settings.entity_extraction.get("default")
 
 
 def format_conversation_text(messages: List[Dict[str, Any]]) -> str:
@@ -65,7 +49,7 @@ def extract_entities_relations_from_chunk(
     if len(conv_text.strip()) < 20:
         return [], []
 
-    prompt = ENTITY_RELATION_PROMPT.format(conversation=conv_text)
+    prompt = EXTRACT_ENTITY_PROMPT.format(conversation=conv_text)
     llm_messages = [{"role": "user", "content": prompt}]
     response = call_llm(llm_messages, model=model, temperature=0.0)
 
@@ -199,8 +183,8 @@ def main():
     chunks_list = chunks_data["chunks"]
     print(f"Loaded {len(chunks_list)} chunks.")
 
-    # Use the model from config.yaml (set it to "gpt-4o-mini")
-    model = config["openai"]["model"]
+    # Use the model from settings
+    model = settings.api_model_settings.SCENARIO_MODELS.get("extract_entity", "GPT-4o-mini")
     print(f"Using LLM model: {model}")
 
     G = build_graph_from_chunks(chunks_list, model)

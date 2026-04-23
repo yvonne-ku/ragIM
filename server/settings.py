@@ -307,7 +307,25 @@ class PromptSettings(BaseSettings):
             "{{question}}"
         ),
     }
-    '''RAG 用模板，可用于知识库问答、文件对话、搜索引擎对话'''
+    '''RAG 用模板，可用于知识库问答、文件对话、搜索引擎对话''' 
+    
+    entity_extraction: dict = {
+        "default": (
+            "You are an expert in conversation analysis and knowledge extraction.\n"
+            "Below is a dialogue between a user and an assistant. Your task is to extract all **important entities** and the **relations** among them.\n\n"
+            "Definitions:\n"
+            "- **Entity**: any significant noun phrase representing a concept, product, action, service, person, organization, financial term, or any domain-specific term mentioned in the conversation. Avoid trivial words.\n"
+            "- **Relation**: a directed or undirected semantic connection between two entities. Use descriptive, concise phrases (e.g., \"recommends\", \"is a type of\", \"belongs to\", \"results in\", \"avoids\").\n\n"
+            "Instructions:\n"
+            "1. Keep entity names concise and canonical. Do not include entire sentences.\n"
+            "2. Each relation must have `source`, `target`, and `description`.\n"
+            "3. Output **only valid JSON** with two keys: `entities` (list of strings) and `relations` (list of objects with `source`, `target`, `description`). No extra commentary.\n\n"
+            "Conversation:\n"
+            "{{conversation}}\n\n"
+            "JSON Output:\n"
+        ),
+    }
+    '''实体关系提取用模板，用于从对话中提取实体和关系''' 
 
 
 
