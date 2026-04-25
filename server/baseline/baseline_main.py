@@ -63,19 +63,17 @@ def run_retrieve_and_evaluate(
     chunks_path: str,
     kb_name: str,
     top_k: int,
-    alpha: float = 0.5,
 ) -> tuple[dict, float, float, float, float]:
     """
     运行检索和评估
     """
-    logger.info(f"开始检索和评估: 知识库名称={kb_name}, top_k={top_k}, alpha={alpha}")
+    logger.info(f"开始检索和评估: 知识库名称={kb_name}, top_k={top_k}")
     from retrieve_and_evaluate import run_evaluation
     try:
         query_results, avg_hit_rate, avg_mrr, avg_precision, avg_recall = run_evaluation(
             json_path=chunks_path,
             kb_name=kb_name,
             top_k=top_k,
-            alpha=alpha,
         )
         logger.info(f"检索和评估完成，知识库名称: {kb_name}")
         return query_results, avg_hit_rate, avg_mrr, avg_precision, avg_recall
@@ -90,9 +88,7 @@ def main():
     - buffer_size: 1,2,3
     - threshold_percentile: 75,80,85,90,95
     - top_k: 3,5,7
-    - α In final_score = α * normalized_vector_score + (1 - α) * bm25_score
     """
-
     input_path = str(os.path.join(settings.basic_settings.RAW_JSON_PATH, "ibm_all.json"))
     kb_name = "kb_baseline_ibm"
 

@@ -89,9 +89,9 @@ def calculate_multiple_sources_metrics(retrieved_ids: List[str], ground_truth_id
     return precision, recall
 
 
-def run_evaluation(json_path: str, kb_name: str, top_k: int = 5, alpha: float = 0.5):
+def run_evaluation(json_path: str, kb_name: str, top_k: int = 5):
     if not os.path.exists(json_path):
-        return [], 0.0, 0.0, 0.0, 0.0
+        return
     with open(json_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
@@ -120,7 +120,7 @@ def run_evaluation(json_path: str, kb_name: str, top_k: int = 5, alpha: float = 
     avg_precision = 0
     avg_recall = 0
     query_results = []
-    retriever = HybridRetriever(kb_name, documents, top_k, alpha)
+    retriever = HybridRetriever(kb_name, documents, top_k)
 
     # 3. Evaluate Retrieval
 
