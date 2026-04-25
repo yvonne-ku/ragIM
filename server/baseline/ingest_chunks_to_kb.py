@@ -14,7 +14,6 @@ def process_chunks_to_docs(json_path: str) -> List[Document]:
     if not os.path.exists(json_path):
         print(f"Error: {json_path} not found.")
         return []
-
     with open(json_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
@@ -24,14 +23,8 @@ def process_chunks_to_docs(json_path: str) -> List[Document]:
     
     # Global docs List
     docs = []
-
     for i, chunk in enumerate(chunks):
-        # 1. Concatenate all message texts in the chunk
         full_text = "\n".join([msg.get("text", "") for msg in chunk["messages"]])
-        # 2. Collect unique topic_ids in this chunk for metadata
-        topic_ids = list(set([msg.get("topic_id", "") for msg in chunk["messages"]]))
-        topic_ids_str = ",".join(topic_ids) if topic_ids else ""
-        # 3. Create Document
         doc = Document(
             page_content=full_text,
             metadata={
@@ -39,12 +32,10 @@ def process_chunks_to_docs(json_path: str) -> List[Document]:
                 "method": method,
                 "window_id": window_id,
                 "chunk_id": chunk["chunk_id"],
-                "topic_ids": topic_ids_str,
                 "msg_count": len(chunk)
             }
         )
         docs.append(doc)
-    
     print(f"Loaded {len(docs)} documents from {json_path} (Method: {method})")
     return docs
 

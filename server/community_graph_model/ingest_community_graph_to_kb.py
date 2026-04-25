@@ -12,22 +12,7 @@ import pickle
 import numpy as np
 from typing import Dict, Any, List
 
-# 假设你已经有这些工具函数（可以在 utils.py 中定义，或者直接从 server.settings 导入）
-# 为了代码自包含，这里提供一个简洁的嵌入获取函数，你也可以直接用 openai 库
 from openai import OpenAI  # 确保安装了 openai>=1.0.0
-
-# ---------- 配置 ----------
-# 如果你使用 config.yaml，请改为从配置文件读取；这里直接硬编码示例值，在实际项目中替换成你的配置加载方式
-CONFIG = {
-    "openai": {
-        "api_key": "sk-your-api-key",  # 替换为你的 API key
-        "base_url": "https://api.openai.com/v1",
-        "embedding_model": "text-embedding-3-small"
-    },
-    "paths": {
-        "output_dir": "D:\\MyProjects\\ragIM\\data\\outputs"
-    }
-}
 
 
 # 如果你已经有 utils.load_config()，可以替换下面这行

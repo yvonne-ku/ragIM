@@ -161,7 +161,7 @@ def detect_communities(G: nx.Graph, method: str = "leiden") -> Dict[str, int]:
             partition = leidenalg.find_partition(
                 ig_graph,
                 leidenalg.RBConfigurationVertexPartition,
-                resolution_parameter=1.2
+                resolution_parameter=1.5
             )
 
             # Map back to original node names, 0 -> chunk_00001, 1 -> entity::entity1
@@ -230,4 +230,4 @@ def main(json_file_path: str, output_dir: str, rebuild_graph: bool = True):
 if __name__ == "__main__":
     json_file_path = "D:\\MyProjects\\ragIM\\data\\processed_chunks\\ibm_graph_hierarchy_split.json"
     output_dir = "D:\\MyProjects\\ragIM\\data\\outputs"
-    main(json_file_path, output_dir, False)
+    main(json_file_path, output_dir, True)

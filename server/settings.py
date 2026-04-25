@@ -218,7 +218,6 @@ class ModelConfig(BaseModel):
     """是否启用回调"""
 
 
-# 定义模型配置项
 class ApiModelSettings(BaseSettings):
     """模型配置项"""
 
@@ -295,52 +294,40 @@ class ApiModelSettings(BaseSettings):
     }
     """模型配置字典"""
 
-    SCENARIO_MODELS: t.Dict[str, str] = {
-        "embedding": "BAAI/bge-m3",
-        "extract_entity": "deepseek-chat",
-        "preprocess": "glm-4-plus",
-        "llm": "glm-4-plus",
-        "action": "glm-4-plus",
-        "postprocess": "glm-4-plus",
-    }
-    """不同场景使用的模型"""
 
-
-# 定义 Prompt 模板
 class PromptSettings(BaseSettings):
 
     model_config = SettingsConfigDict(yaml_file=RAGIM_ROOT / "prompt_settings.yaml",
                                       json_file=RAGIM_ROOT / "prompt_settings.json",
                                       extra="allow")
 
-    rag: dict = {
-        "default": (
-            "【指令】根据已知信息，简洁和专业的来回答问题。"
-            "如果无法从中得到答案，请说 “根据已知信息无法回答该问题”，不允许在答案中添加编造成分，答案请使用中文。\n\n"
-            "【已知信息】{{context}}\n\n"
-            "【问题】{{question}}\n"
-        ),
-        "empty": (
-            "请你回答我的问题:\n"
-            "{{question}}"
-        ),
-    }
-    '''RAG 用模板，可用于知识库问答、文件对话、搜索引擎对话''' 
-    
     entity_extraction: dict = {
         "default": (
-            "You are an expert in conversation analysis and knowledge extraction.\n"
-            "Below is a dialogue between a user and an assistant. Your task is to extract all **important entities** and the **relations** among them.\n\n"
-            "Definitions:\n"
-            "- **Entity**: any significant noun phrase representing a concept, product, action, service, person, organization, financial term, or any domain-specific term mentioned in the conversation. Avoid trivial words.\n"
-            "- **Relation**: a directed or undirected semantic connection between two entities. Use descriptive, concise phrases (e.g., \"recommends\", \"is a type of\", \"belongs to\", \"results in\", \"avoids\").\n\n"
-            "Instructions:\n"
-            "1. Keep entity names concise and canonical. Do not include entire sentences.\n"
-            "2. Each relation must have `source`, `target`, and `description`.\n"
-            "3. Output **only valid JSON** with two keys: `entities` (list of strings) and `relations` (list of objects with `source`, `target`, `description`). No extra commentary.\n\n"
-            "Conversation:\n"
-            "{{conversation}}\n\n"
-            "JSON Output:\n"
+            "### Role\n"
+            "You are an expert Knowledge Graph Engineer specializing in extracting structured information from complex, multi-domain professional dialogues (Finance, Technology, Governance, and Environment).\n\n"
+            "### Task\n"
+            "Analyze the provided dialogue. Your goal is to identify core professional entities and the logical relationships between them to support a GraphRAG system.\n\n"
+            "### Extraction Guidelines\n"
+            "1. **Focus on Subjects**: Extract professional concepts, regulatory frameworks, technical systems, financial instruments, and environmental factors.\n"
+            "2. **Ignore Social Context**: Do not extract \"User\" or \"Agent\" as entities. Ignore conversational filler and focus on the \"knowledge\" being exchanged.\n"
+            "3. **Entity De-duplication**: Use standardized names (e.g., \"NYS Attorney General\" instead of \"the office\").\n"
+            "4. **Relationship Extraction**: Identify how entities interact (e.g., [Technology] \"enables\" [Anonymity], [Regulation] \"mandates\" [Reporting]).\n\n"
+            "### Entity Types to Extract\n"
+            "- **CONCEPT**: Abstract ideas, theories, or professional terms (e.g., Freelancing, Anonymity).\n"
+            "- **ORGANIZATION**: Government bodies, companies, or institutions (e.g., NYS Attorney General).\n"
+            "- **TECHNOLOGY/TOOL**: Software, protocols, or hardware (e.g., Tor Browser, SSL).\n"
+            "- **REGULATION/POLICY**: Laws, guidelines, or compliance requirements (e.g., Whistleblower Act).\n"
+            "- **FINANCIAL_METRIC**: Specific financial terms or indicators (e.g., Tax Liability, Interest Rates).\n\n"
+            "### Output Format\n"
+            "Return ONLY a JSON object with the following structure:\n"
+            "{{\n"
+            "  \"entities\": [\"entity1\", \"entity2\", ...],\n"
+            "  \"relations\": [\n"
+            "    {{\"source\": \"entity1\", \"target\": \"entity2\", \"description\": \"relation description\"}}\n"
+            "  ]\n"
+            "}}\n\n"
+            "### Input Data\n"
+            "{conversation}\n"
         ),
     }
     '''实体关系提取用模板，用于从对话中提取实体和关系'''
@@ -349,7 +336,8 @@ class PromptSettings(BaseSettings):
         "default": (
             "You are a knowledge synthesis assistant. Below is a community of entities, their relationships, and conversation snippets extracted from a dialogue corpus.\n\n"
             "Your task is to write a **concise summary** (no more than 150 words) that captures the central topic and key entities discussed within this community. "
-            "Use the provided relationships to understand how entities are connected.\n\n"
+            "Base your summary **only** on the provided conversation snippets and relationships; do not introduce external knowledge. "
+            "If the snippets cover multiple unrelated topics, acknowledge this diversity rather than forcing a single false theme.\n\n"
             "Entities:\n{{entities}}\n\n"
             "Relationships:\n{{relations}}\n\n"
             "Sample conversation snippets:\n{{text_snippets}}\n\n"

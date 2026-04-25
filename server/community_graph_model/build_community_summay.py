@@ -91,19 +91,19 @@ def generate_community_summary(
 
     # 2. Call LLM API
     from langchain_openai import ChatOpenAI
-    platform_config = settings.api_model_settings.MODEL_PLATFORMS.get("openai")
+    platform_config = settings.api_model_settings.MODEL_PLATFORMS.get("deepseek")
     model_config = settings.api_model_settings.MODELS.get(model)
     llm = ChatOpenAI(
         model=model,
         api_key=platform_config.api_key if platform_config else None,
-        base_url=platform_config.api_llm_base_url if platform_config else None,
+        base_url=platform_config.base_url if platform_config else None,
         temperature=model_config.temperature if model_config else None,
     )
     response = llm.invoke(messages)
     return response.content.strip()
 
 """
- - 生成社区只用前 30 个实体，前 5 个 chunk，前 10 个关系
+ - 生成一个社区摘要时，为了防止 Prompt 过长，只用前 30 个实体，前 5 个 chunk，前 10 个关系
 """
 def build_community_hierarchy(
     G: nx.Graph,
@@ -216,7 +216,7 @@ def main(graph_pkl_path: str, json_file_path: str, output_dir: str):
 
 
 if __name__ == "__main__":
-    graph_pkl_path = "/data/outputs/community_graph.pkl"
-    json_file_path = "D:\\MyProjects\\ragIM\\data\\processed_chunks\\ibm_graph_hierarchy_split.json"
     output_dir = "D:\\MyProjects\\ragIM\\data\\outputs"
+    graph_pkl_path = os.path.join(output_dir, "community_graph.pkl")
+    json_file_path = "D:\\MyProjects\\ragIM\\data\\processed_chunks\\ibm_graph_hierarchy_split.json"
     main(graph_pkl_path, json_file_path, output_dir)
