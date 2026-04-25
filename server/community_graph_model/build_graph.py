@@ -1,7 +1,7 @@
 """
 Step 2: Build Entity-Relation Graph (English conversation, GPT-4o-mini)
 Input: chunked JSON file (e.g., chunked_conversation.json)
-Output: graph.pkl (NetworkX graph) saved in output directory
+Output: community_graph.pkl (NetworkX graph) saved in output directory
 """
 
 import os
@@ -43,29 +43,30 @@ def extract_entities_relations_from_chunk(
 
     # 2. Call LLM API
     from langchain_openai import ChatOpenAI
-    platform_config = settings.api_model_settings.MODEL_PLATFORMS.get("openai")
+    platform_config = settings.api_model_settings.MODEL_PLATFORMS.get("deepseek")
     model_config = settings.api_model_settings.MODELS.get(model)
     llm = ChatOpenAI(
             model=model,
             api_key=platform_config.api_key if platform_config else None,
-            base_url=platform_config.api_llm_base_url if platform_config else None,
+            base_url=platform_config.base_url if platform_config else None,
             temperature=model_config.temperature if model_config else None,
         )
     response = llm.invoke(llm_messages)
+    response_text = response.content  # 提取文本字符串
 
     # 3. Parse JSON from response
     try:
-        start = response.find("{")
-        end = response.rfind("}") + 1
+        start = response_text.find("{")
+        end = response_text.rfind("}") + 1
         if start == -1 or end == 0:
             raise ValueError("No valid JSON found")
-        json_str = response[start:end]
+        json_str = response_text[start:end]
         data = json.loads(json_str)
         entities = data.get("entities", [])
         relations = data.get("relations", [])
         return entities, relations
     except Exception as e:
-        print(f"Failed to parse LLM output: {e}\nRaw output: {response[:200]}...")
+        print(f"Failed to parse LLM output: {e}\nRaw output: {response_text[:200]}...")
         return [], []
 
 
@@ -124,7 +125,9 @@ def build_graph_from_chunks(chunks_data: List[Dict[str, Any]], model: str) -> nx
     print(f"Graph built: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges.")
     return G
 
-
+"""
+ - resolution_parameter: 1.0 ~ 2.0
+"""
 def detect_communities(G: nx.Graph, method: str = "leiden") -> Dict[str, int]:
     """
     Community detection. Falls back to Louvain if Leiden is not available.
@@ -156,7 +159,9 @@ def detect_communities(G: nx.Graph, method: str = "leiden") -> Dict[str, int]:
 
             # Run Leiden algorithm
             partition = leidenalg.find_partition(
-                ig_graph, leidenalg.ModularityVertexPartition
+                ig_graph,
+                leidenalg.RBConfigurationVertexPartition,
+                resolution_parameter=1.2
             )
 
             # Map back to original node names, 0 -> chunk_00001, 1 -> entity::entity1
@@ -180,7 +185,7 @@ def detect_communities(G: nx.Graph, method: str = "leiden") -> Dict[str, int]:
     return {}
 
 
-def main(json_file_path: str, output_dir: str):
+def main(json_file_path: str, output_dir: str, rebuild_graph: bool = True):
     if not os.path.exists(json_file_path):
         print(f"Error: chunked file {json_file_path} not found. Run chunking first.")
         return
@@ -189,10 +194,21 @@ def main(json_file_path: str, output_dir: str):
     chunks_list = chunks_data["chunks"]
     print(f"Loaded {len(chunks_list)} chunks.")
 
-    # 1. Build Graph
-    model = settings.api_model_settings.DEFAULT_EXTRACT_ENTITY_MODEL
-    print(f"Using LLM model: {model}")
-    G = build_graph_from_chunks(chunks_list, model)
+    # 1. Build Graph Or Get Graph From Existing PKL File
+    if rebuild_graph:
+        model = settings.api_model_settings.DEFAULT_EXTRACT_ENTITY_MODEL
+        print(f"Using LLM model: {model}")
+        G = build_graph_from_chunks(chunks_list, model)
+
+        graph_path = os.path.join(output_dir, "raw_graph.pkl")
+        with open(graph_path, 'wb') as f:
+            pickle.dump(G, f, protocol=4)
+        print(f"Graph saved to {graph_path}")
+    else:
+        graph_path = os.path.join(output_dir, "raw_graph.pkl")
+        with open(graph_path, 'rb') as f:
+            G = pickle.load(f)
+        print(f"Graph loaded from {graph_path}")
 
     # 2. Community detection By Leiden Algorithm
     method = "leiden"
@@ -205,7 +221,7 @@ def main(json_file_path: str, output_dir: str):
         print("Community detection failed, graph will not have community info.")
 
     # 3. Save graph
-    graph_path = os.path.join(output_dir, "graph.pkl")
+    graph_path = os.path.join(output_dir, "community_graph.pkl")
     with open(graph_path, 'wb') as f:
         pickle.dump(G, f, protocol=4)
     print(f"Graph saved to {graph_path}")
@@ -214,4 +230,4 @@ def main(json_file_path: str, output_dir: str):
 if __name__ == "__main__":
     json_file_path = "D:\\MyProjects\\ragIM\\data\\processed_chunks\\ibm_graph_hierarchy_split.json"
     output_dir = "D:\\MyProjects\\ragIM\\data\\outputs"
-    main(json_file_path, output_dir)
+    main(json_file_path, output_dir, False)

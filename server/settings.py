@@ -227,27 +227,32 @@ class ApiModelSettings(BaseSettings):
     DEFAULT_EMBEDDING_MODEL: str = "BAAI/bge-m3"
     """默认选用的 Embedding 名称"""
 
-    DEFAULT_EXTRACT_ENTITY_MODEL: str = "GPT-4o-mini"
+    DEFAULT_EXTRACT_ENTITY_MODEL: str = "deepseek-chat"
     """默认选用的实体关系抽取模型"""
 
-    DEFAULT_SUMMARY_MODEL: str = "GPT-4o-mini"
+    DEFAULT_SUMMARY_MODEL: str = "deepseek-chat"
     """默认选用的摘要模型"""
 
     DEFAULT_LLM_MODEL: str = "glm-4-plus"
     """默认选用的 LLM 名称"""
 
-    MODEL_PLATFORMS: t.List[PlatformConfig] = [
-        PlatformConfig(
+    MODEL_PLATFORMS: t.Dict[str, PlatformConfig] = {
+        "zhipuai": PlatformConfig(
             platform_name="zhipuai",
             base_url="https://open.bigmodel.cn/api/paas/v4",
             api_key=os.getenv("ZHIPUAI_API_KEY", ""),
         ),
-        PlatformConfig(
+        "openai": PlatformConfig(
             platform_name="openai",
             base_url="https://api.openai.com/v1",
             api_key=os.getenv("OPENAI_API_KEY", ""),
         ),
-    ]
+        "deepseek": PlatformConfig(
+            platform_name="deepseek",
+            base_url="https://api.deepseek.com",
+            api_key=os.getenv("DEEPSEEK_API_KEY", ""),
+        ),
+    }
     """模型平台配置"""
 
     MODELS: t.Dict[str, ModelConfig] = {
@@ -259,6 +264,15 @@ class ApiModelSettings(BaseSettings):
             history_len=0,
             prompt_name="default",
             callbacks=False,
+        ),
+        "deepseek-chat": ModelConfig(
+            model_name="deepseek-chat",
+            platform_name="deepseek",
+            temperature=0.0,
+            max_tokens=4096,
+            history_len=10,
+            prompt_name="default",
+            callbacks=True,
         ),
         "GPT-4o-mini": ModelConfig(
             model_name="GPT-4o-mini",
@@ -283,7 +297,7 @@ class ApiModelSettings(BaseSettings):
 
     SCENARIO_MODELS: t.Dict[str, str] = {
         "embedding": "BAAI/bge-m3",
-        "extract_entity": "GPT-4o-mini",
+        "extract_entity": "deepseek-chat",
         "preprocess": "glm-4-plus",
         "llm": "glm-4-plus",
         "action": "glm-4-plus",

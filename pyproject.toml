@@ -72,6 +72,8 @@ tokenizers = "0.19.0"
 transformers = "4.40.1"
 sentence-transformers = "^2.2.2"
 zai-sdk = "^0.2.2"
+igraph = "^0.11.8"
+leidenalg = "^0.10.2"
 
 [tool.poetry.extras]
 xinference = ["xinference_client"]

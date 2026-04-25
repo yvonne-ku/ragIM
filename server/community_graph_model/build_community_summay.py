@@ -1,6 +1,6 @@
 """
 Step 3: Generate Hierarchical Index (Community Summaries)
-Input: graph.pkl + chunked conversation JSON
+Input: community_graph.pkl + chunked conversation JSON
 Output: hierarchy.pkl + hierarchy.json
 """
 
@@ -183,7 +183,7 @@ def build_community_hierarchy(
 def main(graph_pkl_path: str, json_file_path: str, output_dir: str):
     # 1. Load graph
     if not os.path.exists(graph_pkl_path):
-        print(f"Error: graph.pkl not found at {graph_pkl_path}. Run build_graph.py first.")
+        print(f"Error: community_graph.pkl not found at {graph_pkl_path}. Run build_graph.py first.")
         return
     with open(graph_pkl_path, "rb") as f:
         G = pickle.load(f)
@@ -216,7 +216,7 @@ def main(graph_pkl_path: str, json_file_path: str, output_dir: str):
 
 
 if __name__ == "__main__":
-    graph_pkl_path = "D:\\MyProjects\\ragIM\\data\\outputs\\graph.pkl"
+    graph_pkl_path = "/data/outputs/community_graph.pkl"
     json_file_path = "D:\\MyProjects\\ragIM\\data\\processed_chunks\\ibm_graph_hierarchy_split.json"
     output_dir = "D:\\MyProjects\\ragIM\\data\\outputs"
     main(graph_pkl_path, json_file_path, output_dir)
