@@ -28,9 +28,6 @@ def process_chunks_to_docs(json_path: str) -> List[Document]:
         doc = Document(
             page_content=full_text,
             metadata={
-                "source": json_path,
-                "method": method,
-                "window_id": window_id,
                 "chunk_id": chunk["chunk_id"],
                 "msg_count": len(chunk)
             }
@@ -51,12 +48,8 @@ def ingest_to_kb(json_path: str, kb_name: str, refresh_kb: bool = True):
     kb = get_kb(kb_name=kb_name)
     
     # 2. Clear existing collection for a fresh start (Optional)
-    if refresh_kb:
-        try:
-            kb.delete_collection()
-            print(f"Deleted existing collection: {kb_name}")
-        except:
-            print(f"Error deleting collection: {kb_name}")
+    kb.delete_collection()
+    print(f"Deleted existing collection: {kb_name}")
 
     # 3. Add documents
     print(f"Ingesting documents into {kb_name}...")

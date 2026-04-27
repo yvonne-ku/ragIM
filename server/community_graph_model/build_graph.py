@@ -1,9 +1,3 @@
-"""
-Step 2: Build Entity-Relation Graph (English conversation, GPT-4o-mini)
-Input: chunked JSON file (e.g., chunked_conversation.json)
-Output: community_graph.pkl (NetworkX graph) saved in output directory
-"""
-
 import os
 import json
 import pickle
@@ -14,6 +8,23 @@ from typing import List, Dict, Any, Tuple
 from server import settings
 
 EXTRACT_ENTITY_PROMPT = settings.prompt_settings.entity_extraction.get("default")
+
+from networkx.readwrite import json_graph
+
+
+def save_graph_to_json(G: nx.Graph, file_path: str):
+    """
+    将 NetworkX 图转换为 JSON 兼容格式并保存
+    """
+    data = json_graph.node_link_data(G)
+    for node in data.get("nodes", []):
+        if "source_ids" in node and isinstance(node["source_ids"], set):
+            node["source_ids"] = list(node["source_ids"])
+    for edge in data.get("links", []):  # node_link_data 默认将边称为 links
+        if "source_ids" in edge and isinstance(edge["source_ids"], set):
+            edge["source_ids"] = list(edge["source_ids"])
+    with open(file_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
 
 
 def format_conversation_text(messages: List[Dict[str, Any]]) -> str:
@@ -73,123 +84,75 @@ def extract_entities_relations_from_chunk(
 def build_graph_from_chunks(chunks_data: List[Dict[str, Any]], model: str) -> nx.Graph:
     """
     Build a global graph from all chunks.
-    Heterogeneous Graph: Have two kinds of nodes: chunk nodes and entity nodes.
     """
     G = nx.Graph()
-
-    # 1. Build Chunk Nodes
-    for chunk in chunks_data:
-        chunk_id = chunk["chunk_id"]
-        G.add_node(chunk_id, type="chunk", chunk_id=chunk_id)
-
     for chunk in chunks_data:
         chunk_id = chunk["chunk_id"]
         messages = chunk["messages"]
-        print(f"Processing {chunk_id} ({len(messages)} messages)...")
 
+        # 1. Extract Entities and Relations from Each Chunk
         entities, relations = extract_entities_relations_from_chunk(messages, model)
 
         # 2. Build Entity Nodes
-        # 3. Connect Entity Node To Chunk Node
         for ent_name in entities:
             ent_id = f"entity::{ent_name}"
             if ent_id not in G:
-                G.add_node(ent_id, type="entity", name=ent_name)
-            G.add_edge(ent_id, chunk_id, relation="mentioned_in")
+                G.add_node(ent_id, type="entity", name=ent_name, source_ids={chunk_id})
+            else:
+                G.nodes[ent_id]["source_ids"].add(chunk_id)
 
-        # 4. Connect Entity to Entity, Save Description
+        # 3. Build Edges
         for rel in relations:
-            src_name = rel.get("source")
-            tgt_name = rel.get("target")
+            src_id = f"entity::{rel.get('source')}"
+            tgt_id = f"entity::{rel.get('target')}"
             desc = rel.get("description", "")
 
-            if not src_name or not tgt_name:
-                continue
+            if src_id not in G or tgt_id not in G: continue
 
-            src_id = f"entity::{src_name}"
-            tgt_id = f"entity::{tgt_name}"
-            if src_id not in G:
-                G.add_node(src_id, type="entity", name=src_name)
-            if tgt_id not in G:
-                G.add_node(tgt_id, type="entity", name=tgt_name)
-
-            # Merge relation descriptions if edge already exists
             if G.has_edge(src_id, tgt_id):
-                existing_desc = G.edges[src_id, tgt_id].get("relation", "")
-                if desc not in existing_desc:
-                    new_desc = f"{existing_desc}；{desc}" if existing_desc else desc
-                    G.edges[src_id, tgt_id]["relation"] = new_desc
+                edge_data = G.edges[src_id, tgt_id]
+                edge_data["source_ids"].add(chunk_id)
+                if desc and desc not in edge_data["relation"]:
+                    edge_data["relation"] += f"；{desc}"
             else:
-                G.add_edge(src_id, tgt_id, relation=desc)
-
-    print(f"Graph built: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges.")
+                G.add_edge(src_id, tgt_id, relation=desc, source_ids={chunk_id})
     return G
 
-"""
- - resolution_parameter: 1.0 ~ 2.0
-"""
-def detect_communities(G: nx.Graph, method: str = "leiden") -> Dict[str, int]:
+
+def detect_communities_hierarchical(G: nx.Graph, resolution_parameter: float = 1.0):
     """
-    Community detection. Falls back to Louvain if Leiden is not available.
-    return a dict like:
-        {
-            "chunk_00001": 0,
-            "chunk_00002": 0,
-            "entity::savings account": 0,
-            "entity::freelancer": 1,
-            "entity::business account": 1,
-            "chunk_00003": 1,
-            ...
-        }
-    the value is the index of the community.
+    Detect just one community in the graph.
     """
-    if method == "leiden":
-        try:
-            import igraph as ig
-            import leidenalg
+    import igraph as ig
+    import leidenalg
 
-            # String nodes to integers for Leiden algorithm, chunk_00001 -> 0, entity::entity1 -> 1
-            mapping = {node: i for i, node in enumerate(G.nodes())}
-            rev_mapping = {i: node for node, i in mapping.items()}
+    # 1. Convert NetworkX graph to igraph
+    nodes = list(G.nodes())
+    mapping = {node: i for i, node in enumerate(nodes)}
+    rev_mapping = {i: node for node, i in mapping.items()}
+    ig_graph = ig.Graph()
+    ig_graph.add_vertices(len(nodes))
+    ig_graph.add_edges([(mapping[u], mapping[v]) for u, v in G.edges()])
 
-            # Convert to igraph graph
-            ig_graph = ig.Graph()
-            ig_graph.add_vertices(len(mapping))
-            ig_graph.add_edges([(mapping[u], mapping[v]) for u, v in G.edges()])
+    # 2. Run Leiden once
+    partition = leidenalg.find_partition(
+        ig_graph,
+        leidenalg.RBConfigurationVertexPartition,
+        resolution_parameter=resolution_parameter
+    )
 
-            # Run Leiden algorithm
-            partition = leidenalg.find_partition(
-                ig_graph,
-                leidenalg.RBConfigurationVertexPartition,
-                resolution_parameter=1.5
-            )
-
-            # Map back to original node names, 0 -> chunk_00001, 1 -> entity::entity1
-            communities = {
-                rev_mapping[i]: comm
-                for i, comm in enumerate(partition.membership)
-            }
-            return communities
-        except ImportError:
-            print("Leiden not installed, falling back to Louvain.")
-            method = "louvain"
-
-    if method == "louvain":
-        try:
-            import community as community_louvain
-            return community_louvain.best_partition(G)
-        except ImportError:
-            print("python-louvain not installed. Cannot perform community detection.")
-            return {}
-
-    return {}
+    # 3. Write community IDs back to NetworkX graph
+    for i, comm_id in enumerate(partition.membership):
+        node_name = rev_mapping[i]
+        G.nodes[node_name]['community'] = comm_id
+    return G
 
 
-def main(json_file_path: str, output_dir: str, rebuild_graph: bool = True):
-    if not os.path.exists(json_file_path):
-        print(f"Error: chunked file {json_file_path} not found. Run chunking first.")
-        return
-    with open(json_file_path, 'r', encoding='utf-8') as f:
+def build_graph(json_path: str, output_dir: str, resolution_parameter: float = 1.0, rebuild_graph: bool = True) -> str:
+    if not os.path.exists(json_path):
+        print(f"Error: chunked file {json_path} not found. Run chunking first.")
+        return ""
+    with open(json_path, 'r', encoding='utf-8') as f:
         chunks_data = json.load(f)
     chunks_list = chunks_data["chunks"]
     print(f"Loaded {len(chunks_list)} chunks.")
@@ -213,21 +176,27 @@ def main(json_file_path: str, output_dir: str, rebuild_graph: bool = True):
     # 2. Community detection By Leiden Algorithm
     method = "leiden"
     print(f"Running {method} community detection...")
-    node_communities = detect_communities(G, method)
-    if node_communities:
-        nx.set_node_attributes(G, node_communities, "community")
-        print(f"Found {len(set(node_communities.values()))} communities.")
+    G = detect_communities_hierarchical(G, resolution_parameter)
+    if G:
+        communities = nx.get_node_attributes(G, 'community').values()
+        print(f"Found {len(set(communities))} communities.")
     else:
         print("Community detection failed, graph will not have community info.")
 
     # 3. Save graph
-    graph_path = os.path.join(output_dir, "community_graph.pkl")
-    with open(graph_path, 'wb') as f:
+    # 3.1 As PKL
+    pkl_path = os.path.join(output_dir, f"community_graph_{resolution_parameter}.pkl")
+    with open(pkl_path, 'wb') as f:
         pickle.dump(G, f, protocol=4)
-    print(f"Graph saved to {graph_path}")
+    print(f"Graph (PKL) saved to {pkl_path}")
+    # 3.2 As JSON（测性能的时候记得注释掉）
+    json_output_path = os.path.join(output_dir, f"community_graph_{resolution_parameter}.json")
+    save_graph_to_json(G, json_output_path)
+    print(f"Graph (JSON) saved to {json_output_path}")
+    return pkl_path
 
 
 if __name__ == "__main__":
-    json_file_path = "D:\\MyProjects\\ragIM\\data\\processed_chunks\\ibm_graph_hierarchy_split.json"
+    json_path = "D:\\MyProjects\\ragIM\\data\\processed_chunks\\ibm_graph_hierarchy_split.json"
     output_dir = "D:\\MyProjects\\ragIM\\data\\outputs"
-    main(json_file_path, output_dir, True)
+    build_graph(json_path, output_dir, resolution_parameter=1.0, rebuild_graph=True)

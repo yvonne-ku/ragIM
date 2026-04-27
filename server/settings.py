@@ -232,6 +232,9 @@ class ApiModelSettings(BaseSettings):
     DEFAULT_SUMMARY_MODEL: str = "deepseek-chat"
     """默认选用的摘要模型"""
 
+    DEFAULT_EXTRACT_KEYWORDS_MODEL: str = "deepseek-chat"
+    """默认选用的 query 关键词抽取模型"""
+
     DEFAULT_LLM_MODEL: str = "glm-4-plus"
     """默认选用的 LLM 名称"""
 
@@ -334,17 +337,50 @@ class PromptSettings(BaseSettings):
 
     community_summary: dict = {
         "default": (
-            "You are a knowledge synthesis assistant. Below is a community of entities, their relationships, and conversation snippets extracted from a dialogue corpus.\n\n"
-            "Your task is to write a **concise summary** (no more than 150 words) that captures the central topic and key entities discussed within this community. "
-            "Base your summary **only** on the provided conversation snippets and relationships; do not introduce external knowledge. "
-            "If the snippets cover multiple unrelated topics, acknowledge this diversity rather than forcing a single false theme.\n\n"
+            "### Role\n"
+            "You are an Expert Dialogue Synthesis Analyst. Your task is to analyze a collection of interaction snippets between two participants and provide a high-level conceptual map of their discussion.\n\n"
+            "### Context\n"
+            "The following data represents a 'community' of entities and relationships extracted from cross-domain dialogues (e.g., Technology, Finance, Governance, Environment). The goal is to create a macro-anchor for a RAG system to help users quickly understand long-term thematic threads.\n\n"
+            "### Task\n"
+            "Write a concise summary (max 150 words) that:\n"
+            "1. **Identifies the Primary Theme**: Determine the main topic being discussed (e.g., 'A debate on Carbon Tax implementation' or 'Troubleshooting Redis connection pool').\n"
+            "2. **Captures Key Entities**: Mention the most significant organizations, concepts, or tools involved.\n"
+            "3. **Synthesizes the Exchange**: Don't just list facts; summarize the flow of information or the consensus/conflict between the two parties.\n"
+            "4. **Handles Divergence**: If the snippets contain multiple unrelated topics (common in long chat histories), acknowledge the shift in focus rather than forcing a single narrative.\n\n"
+            "### Constraints\n"
+            "- **Groundedness**: Use ONLY the provided snippets and relationships. No external knowledge.\n"
+            "- **Tone**: Professional, objective, and analytical.\n"
+            "- **Language**: English (consistent with source data).\n\n"
+            "### Input Data\n"
             "Entities:\n{{entities}}\n\n"
             "Relationships:\n{{relations}}\n\n"
-            "Sample conversation snippets:\n{{text_snippets}}\n\n"
-            "Community summary:\n"
+            "Conversation Snippets:\n{{text_snippets}}\n\n"
+            "### Summary Output\n"
         ),
     }
-    '''社区摘要生成用模板，用于为社区生成简洁摘要'''
+    '''社区摘要生成用模板，特别优化了两人对话场景下的议题转换处理'''
+
+    extract_keywords: dict = {
+        "default": (
+            "### Role\n"
+            "You are a Multi-Domain Information Extraction Expert. Your task is to identify and extract the most significant, domain-specific entities and concepts from a user query to facilitate high-precision retrieval in a Knowledge Graph.\n\n"
+            "### Task\n"
+            "Analyze the user's query and extract core nouns or noun phrases that represent the essential subjects of the inquiry across various fields such as Finance, Technology, Environment, Law, or Economics.\n\n"
+            "### Extraction Guidelines\n"
+            "1. **Core Subjects Only**: Extract specific entities (e.g., \"Federal Reserve\", \"Carbon Tax\", \"Microplastics\", \"Interest Rates\").\n"
+            "2. **Domain Neutrality**: Whether the query is about a biological process, a financial instrument, or a legal framework, focus on the 'what' rather than the 'how' or 'why'.\n"
+            "3. **Zero Noise**: Completely exclude conversational filler, greetings, and functional verbs (e.g., skip \"please find\", \"explain to me\", \"compare\").\n"
+            "4. **Compound Terms**: Keep meaningful compound phrases together instead of breaking them into individual words (e.g., extract \"Sustainable Development Goals\" as one unit).\n\n"
+            "### Output Format\n"
+            "Return ONLY a JSON object with the following structure:\n"
+            "{{\n"
+            "  \"keywords\": [\"term1\", \"term2\", \"term3\"]\n"
+            "}}\n\n"
+            "### Input Query\n"
+            "{query}\n"
+        ),
+    }
+    '''query 的关键词提取，用于在向量库中匹配最接近的实体节点'''
 
 
 

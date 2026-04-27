@@ -4,31 +4,28 @@ import numpy as np
 from sentence_transformers import SentenceTransformer, util
 from server import settings
 
-
 """
  - buffer_size
  - threshold_percentile
 """
-def semantic_split(input_path, output_path, buffer_size=1, threshold_percentile=90):
+def semantic_split(input_path, output_dir, buffer_size=1, threshold_percentile=90) -> str:
     """
     Semantic Baseline: Sliding Window Semantic Splitter
-    Maintains two windows (left and right) of size window_size around each possible split point.
-    Calculates the similarity between the average embeddings of these two windows.
-    Identifies 'dips' in similarity as topic split points.
+    Expand a msg into a buffer window
+    Encode the buffer window into a vector
+    Present the msg by the vector
+    There are continuous msgs/windows/vectors, Calculate the similarity between adjacent vectors
+    Under threshold percentile, Find out the minimum similarities
 
-    - buffer_size: radius of the window
-    - threshold_percentile
+    - buffer_size: radius of the window，0~3
+    - threshold_percentile，75~95
     """
     if not os.path.exists(input_path):
         print(f"Error: {input_path} not found.")
-        return
-
+        return ""
     with open(input_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
-
     messages = data.get("content", [])
-    if not messages:
-        return
 
     # 1. Initialize Embeddings
     print(f"Loading model: BAAI/bge-m3...")
@@ -47,7 +44,7 @@ def semantic_split(input_path, output_path, buffer_size=1, threshold_percentile=
     # 3. Calculate similarities of adjacent windows
     similarities = []
     for i in range(len(embeddings) - 1):
-        similarity = util.cos_sim(embeddings[i], embeddings[i + 1])
+        similarity = util.cos_sim(embeddings[i], embeddings[i+1])
         similarities.append(similarity.item())
 
     # 4. Identify dips (local minima)
@@ -61,41 +58,38 @@ def semantic_split(input_path, output_path, buffer_size=1, threshold_percentile=
     for i in range(len(similarities)):
         if similarities[i] < breakpoint_threshold:
             chunks.append(current_chunk)
-            current_chunk = [messages[i + 1]]
+            current_chunk = [messages[i+1]]
         else:
-            current_chunk.append(messages[i + 1])
+            current_chunk.append(messages[i+1])
     if current_chunk:
         chunks.append(current_chunk)
 
     # 6. Save results
-    # Format chunks with chunk_id
     formatted_chunks = []
     for i, chunk in enumerate(chunks):
-        chunk_id = f"chunk_{i + 1:05d}"
+        chunk_id = f"chunk_{i+1:05d}"
         formatted_chunks.append({
             "chunk_id": chunk_id,
             "messages": chunk
         })
-
     result = {
-        "window_id": data.get("window_id", "2"),
-        "method": "semantic_baseline",
+        "window_id": data.get("window_id", "1"),
+        "method": "semantic_split",
         "buffer_size": buffer_size,
         "threshold_percentile": float(threshold_percentile),
         "chunks": formatted_chunks
     }
 
+    output_path = os.path.join(output_dir, f"semantic_split_b:{buffer_size}_p:{threshold_percentile}.json")
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    output_path = os.path.join(output_path, f"ibm_semantic_split_{buffer_size}_{threshold_percentile}.json")
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
-    print(f"Semantic Baseline: Processed {len(messages)} messages into {len(chunks)} chunks.")
+    print(f"Semantic Split: Processed {len(messages)} messages into {len(chunks)} chunks.")
     print(f"Result saved to {output_path}")
-
+    return output_path
 
 if __name__ == "__main__":
-    input_file = os.path.join(settings.basic_settings.RAW_JSON_PATH, "ibm_all.json")
-    output_path = os.path.join(settings.basic_settings.CHUNKS_PATH)
-
-    semantic_split(input_file, output_path)
+    input_file = os.path.join(settings.basic_settings.RAW_JSON_PATH, "ubuntu_all.json")
+    output_dir = os.path.join(settings.basic_settings.CHUNKS_PATH)
+    semantic_split(input_file, output_dir)

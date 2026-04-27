@@ -1,3 +1,4 @@
+import json
 import os
 
 # 禁用 ChromaDB 遥测
@@ -140,12 +141,20 @@ class SimpleChromaKB:
 
         formatted_results = []
         for doc, score in results:
+            source_chunk_ids = json.loads(doc.metadata.get('source_chunk_ids', '[]'))
             chunk_id = doc.metadata.get('chunk_id', '')
-            formatted_results.append({
-                'text': doc.page_content,
-                'chunk_id': chunk_id,
-                'score': score
-            })
+            if chunk_id:
+                formatted_results.append({
+                    'text': doc.page_content,
+                    'chunk_id': chunk_id,
+                    'score': score
+                })
+            else:
+                formatted_results.append({
+                    'summary': doc.page_content,
+                    'chunk_ids': source_chunk_ids,
+                    'score': score
+                })
         return formatted_results
 
 

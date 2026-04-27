@@ -20,15 +20,19 @@ def run_semantic_split(
     """
     logger.info(f"开始语义分割: 输入路径={input_path}, 缓冲区大小={buffer_size}, 阈值百分比={threshold_percentile}")
     output_dir = str(os.path.join(settings.basic_settings.CHUNKS_PATH))
-    from split_by_semantic import semantic_split
+    output_path = str(os.path.join(output_dir, f"semantic_split_b:{buffer_size}_p:{threshold_percentile}.json"))
+    if os.path.exists(output_path):
+        logger.info(f"语义分割结果已存在，输出路径: {output_path}")
+        return output_path
+
+    from server.split_by_semantic import semantic_split
     try:
-        semantic_split(
+        output_path = semantic_split(
             input_path=input_path,
             output_dir=output_dir,
             buffer_size=buffer_size,
             threshold_percentile=threshold_percentile
         )
-        output_path = str(os.path.join(output_dir, f"baseline_split_b:{buffer_size}_p:{threshold_percentile}.json"))
         logger.info(f"语义分割完成，输出路径: {output_path}")
         return output_path
     except Exception as e:
@@ -84,7 +88,6 @@ def run_retrieve_and_evaluate(
 
 def main():
     """
-    主函数，串联整个 RAG 流程，超参：
     - buffer_size: 1,2,3
     - threshold_percentile: 75,80,85,90,95
     - top_k: 3,5,7
@@ -113,8 +116,9 @@ def main():
                     )
 
                     # Save Result
-                    output_dir = os.path.join(settings.basic_settings.RESULTS_PATH)
+                    output_dir = str(os.path.join(settings.basic_settings.RESULTS_PATH))
                     os.makedirs(output_dir, exist_ok=True)
+                    output_file = str(os.path.join(output_dir, f"baseline_b:{buffer_size}_p:{threshold_percentile}_k:{top_k}.json"))
                     evaluation_result = {
                         "timestamp": time.strftime("%m_%d_%H_%M"),
                         "method": "baseline",
@@ -132,7 +136,6 @@ def main():
                         },
                         "query_results": query_results,
                     }
-                    output_file = os.path.join(output_dir, f"baseline_b:{buffer_size}_p:{threshold_percentile}_k:{top_k}.json")
                     with open(output_file, 'w', encoding='utf-8') as f:
                         json.dump(evaluation_result, f, ensure_ascii=False, indent=2)
                     logger.info(f"超参组合: buffer_size={buffer_size}, threshold_percentile={threshold_percentile}, top_k={top_k} 执行完成，输出路径: {output_file}")
