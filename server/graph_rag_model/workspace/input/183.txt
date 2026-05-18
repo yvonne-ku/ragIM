@@ -1,0 +1,1 @@
+sorry =/ sudo apt-get install openssh-server http://paste.ubuntu-nl.org/20262

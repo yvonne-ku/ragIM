@@ -1,0 +1,1 @@
+yes any news or waiting on me? waiting on you... lol failed to download, check your internet connection have you contacted your ISP yet? no, as i am connected on the same network now, i thought it was a linux problem it could be but it could also be that your ISP has connection on your IRC port but not on Port 80 which is for websites i am browsing through my other laptop

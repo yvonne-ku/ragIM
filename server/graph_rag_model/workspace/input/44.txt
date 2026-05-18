@@ -1,0 +1,1 @@
+I appreciate the help though I would think that to be the best idea. However, when you format the partition, do a slow format. it might be bad sectors causing trouble you think?

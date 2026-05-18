@@ -1,0 +1,1 @@
+!pastebin > pushpop check the pm from ubotu yes but this is on another pc farous i need to have a look at your /etc/X11/xorg.conf file ok ill ssh in one minutes ok is ssh enabled by default? the client not the server yes for the server install openssh-server package like i said im new to all this what would be the actual command

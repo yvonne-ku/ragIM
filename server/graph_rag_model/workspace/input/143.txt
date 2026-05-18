@@ -1,0 +1,1 @@
+see if u could find one Will ssh server only ask for authorization key password the first time I log in, not when exiting an reconnecting to server? llutz is right make sure you ssh-add ~/.ssh/id_rsa is your public key listed in the authorized keys?

@@ -1,0 +1,1 @@
+should i change the appearence settings Visual effects, none, standard or enhanced well if testing for other things  yes  disable compiz  and choose  'None'  or  alt+F2   metacity --replace or in terminal   metacity --replace & disown xorg is at 90% now

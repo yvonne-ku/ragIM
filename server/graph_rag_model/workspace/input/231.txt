@@ -1,0 +1,1 @@
+unfortunatley I've found USB syncing to be fickle at best... in the initial setup, why not try /dev/ttyUSB0 and /dev/ttyUSB1 in turn, instead of /dev/pilot? trying that out now

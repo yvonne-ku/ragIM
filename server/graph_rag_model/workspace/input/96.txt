@@ -1,0 +1,1 @@
+i think i am smarter now though i tried linux-server 2.6.27-7, 2.6.27-9 and 2.6.27-11, and all give me the same 2-3 MB/s now i am trying linux-genric

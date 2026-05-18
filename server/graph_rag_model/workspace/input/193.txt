@@ -1,0 +1,1 @@
+anyone? smbfs/cifs does that mean I need to run samba? yes what i want to do is allow a user just to put in his username and password on any workstation and it automatically mounts his file system from a predefined remote host i've had pretty good luck with it

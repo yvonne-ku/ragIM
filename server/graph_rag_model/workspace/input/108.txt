@@ -1,0 +1,1 @@
+ahh nice thanks! also do you know of a way I can make it so when I press TAB to autocomplete folder/file name it ignores case-sensativity? no sorry, good practice to get used to it :)

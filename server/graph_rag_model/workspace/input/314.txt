@@ -1,0 +1,1 @@
+you could report the problem and the fix maybe on the forum? there is a bugreport already oh.. report it there then :) what's the url? https://bugs.launchpad.net/ubuntu/+source/linux-source-2.6.20/+bug/110391 looks like you will make their day :)

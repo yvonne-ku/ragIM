@@ -1,0 +1,1 @@
+much appreciated 1.42 is latest IBM java? yes. for certain arches do you have j2se-common installed in ubuntu as well is ibm's java? I do not.

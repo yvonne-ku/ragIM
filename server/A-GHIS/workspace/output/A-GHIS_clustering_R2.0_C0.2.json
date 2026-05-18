@@ -1,0 +1,10 @@
+{
+  "model": "A-GHIS",
+  "params": {
+    "resolution": 2.0,
+    "conductance_threshold": 0.2
+  },
+  "nmi": 0.3835,
+  "ari": 0.0266,
+  "covered_messages": 3436
+}

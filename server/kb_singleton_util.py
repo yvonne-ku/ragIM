@@ -68,7 +68,7 @@ class ChromaResourceManager:
 
 class SimpleChromaKB:
     kb_name: str
-    vs_path: str
+    VS_DIR: str
 
     embedding_model_name: str
     embedding_function: Embeddings
@@ -79,17 +79,17 @@ class SimpleChromaKB:
     def __init__(
             self,
             kb_name: str,
-            vs_path: str = None,
+            VS_DIR: str = None,
             embedding_model_name: str = None):
 
         # 1. Path
         self.kb_name = kb_name
-        self.vs_path = vs_path or str(settings.basic_settings.VS_PATH)
-        if not os.path.exists(self.vs_path):
-            os.makedirs(self.vs_path)
+        self.VS_DIR = VS_DIR or str(settings.basic_settings.VS_DIR)
+        if not os.path.exists(self.VS_DIR):
+            os.makedirs(self.VS_DIR)
 
         # 2. Get Singleton Client
-        self.client = ChromaResourceManager.get_client(self.vs_path)
+        self.client = ChromaResourceManager.get_client(self.VS_DIR)
 
         # 3. Get Singleton Embeddings
         self.embedding_model_name = embedding_model_name or settings.api_model_settings.DEFAULT_EMBEDDING_MODEL
@@ -101,7 +101,7 @@ class SimpleChromaKB:
         # Get platform configuration
         target_key = None
         target_url = None
-        for platform in settings.api_model_settings.MODEL_PLATFORMS:
+        for platform in settings.api_model_settings.MODEL_PLATFORMS.values():
             if platform.platform_name == platform_name:
                 target_key = platform.api_key
                 target_url = platform.api_embedding_base_url
@@ -136,6 +136,10 @@ class SimpleChromaKB:
         )
         print(f"[kb 资源管理器] 已重新初始化集合: {self.kb_name}")
 
+    def delete_kb(self):
+        self.client.delete_collection(self.kb_name)
+        print(f"[kb 资源管理器] 已删除向量库: {self.kb_name}")
+
     def search(self, query: str, top_k: int = 5):
         results = self.template.similarity_search_with_score(query, k=top_k)
 
@@ -157,26 +161,45 @@ class SimpleChromaKB:
                 })
         return formatted_results
 
+def show_stats():
+    """显示向量库统计信息"""
+    client = chromadb.PersistentClient(path=str(settings.basic_settings.VS_DIR))
+    collections = client.list_collections()
+    total_docs = 0
+    print(f"存储路径: {settings.basic_settings.VS_DIR}")
+    print(f"总向量库数: {len(collections)}")
+    print("=" * 60)
+    for i, coll in enumerate(collections, 1):
+        doc_count = coll.count()
+        total_docs += doc_count
+        print(f"{i}. 名称: {coll.name}")
+        print(f"   文档数: {doc_count}")
+        print()
+    print("=" * 60)
+    print(f"总文档数: {total_docs}")
+    print(f"存储路径: {settings.basic_settings.VS_DIR}")
+
 
 def get_kb(
         kb_name: str,
-        vs_path: str = None,
+        VS_DIR: str = None,
         embedding_model_name: str = None
 ) -> SimpleChromaKB:
     return SimpleChromaKB(
         kb_name=kb_name,
-        vs_path=vs_path,
+        VS_DIR=VS_DIR,
         embedding_model_name=embedding_model_name
     )
 
 
 # Warm Up For The First Time Being Imported
 print(">>> 正在初始化全局知识库基础资源...")
-ChromaResourceManager.get_client(str(settings.basic_settings.VS_PATH))
+ChromaResourceManager.get_client(str(settings.basic_settings.VS_DIR))
 ChromaResourceManager.get_embeddings(
     model_name=settings.api_model_settings.DEFAULT_EMBEDDING_MODEL,
 )
 print(">>> 全局知识库基础资源初始化完毕。")
 
+
 if __name__ == "__main__":
-    pass
+    show_stats()

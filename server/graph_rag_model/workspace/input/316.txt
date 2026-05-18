@@ -1,0 +1,1 @@
+in the bug report 'The same problem in thinkpad x61, kernel is 2.6.22-14-generic #1 SMP Sun Oct 14 21:45:15 GMT 2007 x86_64 GNU/Linux version is Ubuntu 7.10 , the cpu fan speed never slow down' ok ill try to register

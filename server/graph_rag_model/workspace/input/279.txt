@@ -1,0 +1,1 @@
+ok so what is your machine's hostname ? try mysql -u root -h server1 -p it just hangs right after i enter password. cursor just blinks Hmmmm I wonder if your name resolution is a problem also

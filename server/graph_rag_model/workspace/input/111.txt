@@ -1,0 +1,1 @@
+log off an don but how to I logoff if my desktop is frozen. is there a command line method? ctrl+alt+F1   log in     sudo  restart gdm or   sudo restart kdm depending what you use using gnome but even ctrl-alt-F1 doesn't work when this occurs mmm thats why I have to stay logged in remotely ah mm  ok I am puzzled at this point

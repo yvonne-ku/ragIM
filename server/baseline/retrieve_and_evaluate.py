@@ -4,7 +4,7 @@ from typing import List, Dict, Any
 from rank_bm25 import BM25Okapi
 from server import settings
 from server.kb_singleton_util import get_kb
-from server.evaluate_utils import evaluate_retrieval
+from server.baseline.utils.evaluate_utils import evaluate_retrieval
 
 
 class HybridRetriever:
@@ -47,7 +47,7 @@ class HybridRetriever:
 
         # 3.1 Add Vector results
         for i, res in enumerate(vector_results):
-            chunk_id = res.get('chunk_id', f'chunk_{i}')
+            chunk_id = res.get('chunk_id', '')
             rank = i + 1
             combined_results[chunk_id] = {
                 'text': res.get('text', ''),
@@ -84,8 +84,8 @@ def run_evaluation(json_path: str, kb_name: str, top_k: int = 5):
     # 1. Prepare documents for BM25
     documents = []
     for chunk in data['chunks']:
-        text = "\n".join([msg['text'] for msg in chunk['messages']])
-        documents.append({"text": text, "metadata": {"chunk_id": chunk['chunk_id'], "method": data['method']}})
+        concat_text = chunk['concat_text']
+        documents.append({"text": concat_text, "metadata": {"chunk_id": chunk['chunk_id']}})
 
     # 2. Initialize retriever
     retriever = HybridRetriever(kb_name, documents, top_k)
@@ -96,5 +96,5 @@ def run_evaluation(json_path: str, kb_name: str, top_k: int = 5):
 
 if __name__ == "__main__":
     # Ensure ingest_to_kb.py has been run first to populate ChromaDB
-    run_evaluation(os.path.join(settings.basic_settings.CHUNKS_PATH, "ubuntu_naive_split.json"), "kb_ubuntu_naive")
-    run_evaluation(os.path.join(settings.basic_settings.CHUNKS_PATH, "ubuntu_semantic_split.json"), "kb_ubuntu_semantic")
+    run_evaluation(os.path.join(settings.basic_settings.CHUNKS_DIR, "ubuntu_naive_split.json"), "kb_ubuntu_naive")
+    run_evaluation(os.path.join(settings.basic_settings.CHUNKS_DIR, "ubuntu_semantic_split.json"), "kb_ubuntu_semantic")

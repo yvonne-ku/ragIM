@@ -1,0 +1,1 @@
+fromfdisk all cylinders are in use Sectors 232060928 - 453244927 apparently. fdisk shows that different, if so, should be able to use windows to format it

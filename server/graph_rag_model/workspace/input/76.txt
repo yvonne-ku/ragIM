@@ -1,0 +1,1 @@
+go ahead ps -e|grep synaptic i enter the command did it return anything?

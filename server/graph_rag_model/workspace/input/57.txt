@@ -1,0 +1,1 @@
+peace The only reason I can think of for you not getting full resolution is that your video memory is set too low in the BIOS ( windows simply ignores this setting which is why you have full resolution in windows ) so what should I try to set in BIOS?

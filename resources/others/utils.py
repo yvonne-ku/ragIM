@@ -29,7 +29,7 @@ class StaticPathTools:
         return os.path.join(StaticPathTools.get_kb_path(kb_name), "content")
 
     @staticmethod
-    def get_vs_path(kb_name: str, vector_name: str):
+    def get_VS_DIR(kb_name: str, vector_name: str):
         """知识库 vector 地址"""
         return os.path.join(StaticPathTools.get_kb_path(kb_name), "vector_store", vector_name)
     

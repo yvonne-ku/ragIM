@@ -1,0 +1,1 @@
+I have it according to ubuntu but I get an error from the configure script let me get it

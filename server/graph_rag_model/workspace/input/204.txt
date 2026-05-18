@@ -1,0 +1,1 @@
+i see heh sorry. ok then, well, you use the command 'sudo' in order to execute stuff with root privileges like 'sudo passwd'? but when it asks you for password, enter your user password, not root password (whicth you have not set anyway) right. put sudo in front of anything well, anything that needs it :)

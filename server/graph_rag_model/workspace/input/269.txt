@@ -1,0 +1,1 @@
+two ways to install you can just click to install inside firefox, but that will just be for one person it is also in package manager though once you add right repo https://help.ubuntu.com/community/RestrictedFormats/Flash About that ping to my AP failing – I changed a setting on the AP, and now iwlist wlan0 scan doesn't see it at all. I don't know what an ap is.

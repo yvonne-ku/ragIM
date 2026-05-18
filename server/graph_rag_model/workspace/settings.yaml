@@ -1,0 +1,115 @@
+models:
+  default_chat_model:
+    type: chat
+    model_provider: openai
+    model: glm-4
+    auth_type: api_key
+    api_key: ca481f7bb7f74cf59d2ce3eeb3abe94c.vPAQSyK9puaotw2q
+    api_base: https://open.bigmodel.cn/api/paas/v4
+    concurrent_requests: 5
+    async_mode: threaded
+    retry_strategy: exponential_backoff
+    max_retries: 5
+  default_embedding_model:
+    type: embedding
+    model_provider: openai
+    model: embedding-2
+    auth_type: api_key
+    api_key: ca481f7bb7f74cf59d2ce3eeb3abe94c.vPAQSyK9puaotw2q
+    api_base: https://open.bigmodel.cn/api/paas/v4
+    concurrent_requests: 5
+    async_mode: threaded
+    retry_strategy: exponential_backoff
+    max_retries: 5
+input:
+  storage:
+    type: file
+    base_dir: input
+  file_type: text
+chunks:
+  size: 1000000
+  overlap: 0
+output:
+  type: file
+  base_dir: output
+cache:
+  type: file
+  base_dir: cache
+reporting:
+  type: file
+  base_dir: logs
+vector_store:
+  default_vector_store:
+    type: lancedb
+    db_uri: D:/MyProjects/ragIM/data/vector_store/graphrag_lancedb
+    overwrite: true
+embed_text:
+  model_id: default_embedding_model
+  vector_store_id: default_vector_store
+extract_graph:
+  model_id: default_chat_model
+  prompt: prompts/extract_graph.txt
+  entity_types:
+  - organization
+  - person
+  - geo
+  - event
+  max_gleanings: 1
+summarize_descriptions:
+  model_id: default_chat_model
+  prompt: prompts/summarize_descriptions.txt
+  max_length: 500
+extract_graph_nlp:
+  text_analyzer:
+    extractor_type: regex_english
+  async_mode: threaded
+cluster_graph:
+  max_cluster_size: 10
+extract_claims:
+  enabled: false
+  model_id: default_chat_model
+  prompt: prompts/extract_claims.txt
+  description: Any claims or facts that could be relevant to information discovery.
+  max_gleanings: 1
+community_reports:
+  model_id: default_chat_model
+  graph_prompt: prompts/community_report_graph.txt
+  text_prompt: prompts/community_report_text.txt
+  max_length: 2000
+  max_input_length: 8000
+embed_graph:
+  enabled: false
+umap:
+  enabled: false
+snapshots:
+  graphml: false
+  embeddings: false
+local_search:
+  chat_model_id: default_chat_model
+  embedding_model_id: default_embedding_model
+  prompt: prompts/local_search_system_prompt.txt
+global_search:
+  chat_model_id: default_chat_model
+  map_prompt: prompts/global_search_map_system_prompt.txt
+  reduce_prompt: prompts/global_search_reduce_system_prompt.txt
+  knowledge_prompt: prompts/global_search_knowledge_system_prompt.txt
+drift_search:
+  chat_model_id: default_chat_model
+  embedding_model_id: default_embedding_model
+  prompt: prompts/drift_search_system_prompt.txt
+  reduce_prompt: prompts/drift_search_reduce_prompt.txt
+basic_search:
+  chat_model_id: default_chat_model
+  embedding_model_id: default_embedding_model
+  prompt: prompts/basic_search_system_prompt.txt
+embeddings:
+  model: default_embedding_model
+workflows:
+- load_input_documents
+- use_document_as_text_unit
+- create_final_documents
+- extract_graph
+- finalize_graph
+- create_communities
+- create_community_reports
+- generate_text_embeddings

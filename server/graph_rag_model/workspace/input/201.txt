@@ -1,0 +1,1 @@
+I have on eof those - they work great so i could just remove fix the sources.list, reinstall the original nvidia-glx, and i'm done? Version: 1.0.8776+2.6.17.7-10.1 on both my machines ok, i think everything went fine; beryl it's still working thanks for the help np

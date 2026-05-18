@@ -1,0 +1,1 @@
+yes no no, that is okay use it. The other tools are just more comfortable and anyway yumi and xboot are windows tools my question is if I create a removable disk to install after restart as it demands, on which  disk it should install auto or it will be asked? You will be asked

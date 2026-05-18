@@ -1,0 +1,1 @@
+okey boot back xp run a scandisk and then run defrag twice at least,  then try the gparted cd again ok , still in gparted ? refresh the gparted view,  I know that in 7.04 it would occasionnaly tell you there was an error but it would still do the job reboot the cd

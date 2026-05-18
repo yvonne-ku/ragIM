@@ -1,0 +1,1 @@
+it's been a while; where is the 'id' box? PalmOSDevices asks for User Name ( hte owner of the handheld ia ssume) and ID username is indeed the owner name, and ID is almost invariably 1000 (I think) where does ID come from?

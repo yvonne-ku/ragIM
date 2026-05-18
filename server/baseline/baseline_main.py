@@ -10,38 +10,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def run_semantic_split(
-    input_path: str,
-    buffer_size: int,
-    threshold_percentile: int
-) -> str:
-    """
-    运行语义分割
-    """
-    logger.info(f"开始语义分割: 输入路径={input_path}, 缓冲区大小={buffer_size}, 阈值百分比={threshold_percentile}")
-    output_dir = str(os.path.join(settings.basic_settings.CHUNKS_PATH))
-    output_path = str(os.path.join(output_dir, f"semantic_split_b:{buffer_size}_p:{threshold_percentile}.json"))
-    if os.path.exists(output_path):
-        logger.info(f"语义分割结果已存在，输出路径: {output_path}")
-        return output_path
-
-    from server.split_by_semantic import semantic_split
-    try:
-        output_path = semantic_split(
-            input_path=input_path,
-            output_dir=output_dir,
-            buffer_size=buffer_size,
-            threshold_percentile=threshold_percentile
-        )
-        logger.info(f"语义分割完成，输出路径: {output_path}")
-        return output_path
-    except Exception as e:
-        logger.error(f"语义分割失败: {e}")
-        raise
-
 
 def run_ingest_to_kb(
-    chunks_path: str,
+    CHUNKS_DIR: str,
     kb_name: str,
     refresh_kb: bool
 ) -> str:
@@ -52,7 +23,7 @@ def run_ingest_to_kb(
     from ingest_chunks_to_kb import ingest_to_kb
     try:
         ingest_to_kb(
-            json_path=chunks_path,
+            json_path=CHUNKS_DIR,
             kb_name=kb_name,
             refresh_kb=refresh_kb
         )
@@ -64,23 +35,23 @@ def run_ingest_to_kb(
 
 
 def run_retrieve_and_evaluate(
-    chunks_path: str,
+    CHUNKS_DIR: str,
     kb_name: str,
     top_k: int,
-) -> tuple[dict, float, float, float, float]:
+) -> tuple[dict, float, float, float]:
     """
     运行检索和评估
     """
     logger.info(f"开始检索和评估: 知识库名称={kb_name}, top_k={top_k}")
     from retrieve_and_evaluate import run_evaluation
     try:
-        query_results, avg_hit_rate, avg_mrr, avg_precision, avg_recall = run_evaluation(
-            json_path=chunks_path,
+        query_results, avg_precision, avg_recall, F1_score = run_evaluation(
+            json_path=CHUNKS_DIR,
             kb_name=kb_name,
             top_k=top_k,
         )
         logger.info(f"检索和评估完成，知识库名称: {kb_name}")
-        return query_results, avg_hit_rate, avg_mrr, avg_precision, avg_recall
+        return query_results, avg_precision, avg_recall, F1_score
     except Exception as e:
         logger.error(f"检索和评估失败: {e}")
         raise
@@ -92,53 +63,46 @@ def main():
     - threshold_percentile: 75,80,85,90,95
     - top_k: 3,5,7
     """
-    input_path = str(os.path.join(settings.basic_settings.RAW_JSON_PATH, "ibm_all.json"))
-    kb_name = "kb_baseline_ibm"
+    CHUNKS_DIR = str(os.path.join(settings.basic_settings.CHUNKS_DIR, "semantic_split_b_1_p_90.json"))
+    kb_name = "kb_baseline"
 
     try:
-        for buffer_size in [1, 2, 3]:
-            for threshold_percentile in [75, 80, 85, 90, 95]:
-                for top_k in [3, 5, 7]:
-                    chunks_path = run_semantic_split(
-                        input_path=input_path,
-                        buffer_size=buffer_size,
-                        threshold_percentile=threshold_percentile
-                    )
-                    run_ingest_to_kb(
-                        chunks_path=chunks_path,
-                        kb_name=kb_name,
-                        refresh_kb=True
-                    )
-                    query_results, avg_hit_rate, avg_mrr, avg_precision, avg_recall = run_retrieve_and_evaluate(
-                        chunks_path=chunks_path,
-                        kb_name=kb_name,
-                        top_k=top_k
-                    )
+        run_ingest_to_kb(
+            CHUNKS_DIR=CHUNKS_DIR,
+            kb_name=kb_name,
+            refresh_kb=False        # 不需要重新生成向量库就设置为 False
+        )
 
-                    # Save Result
-                    output_dir = str(os.path.join(settings.basic_settings.RESULTS_PATH))
-                    os.makedirs(output_dir, exist_ok=True)
-                    output_file = str(os.path.join(output_dir, f"baseline_b:{buffer_size}_p:{threshold_percentile}_k:{top_k}.json"))
-                    evaluation_result = {
-                        "timestamp": time.strftime("%m_%d_%H_%M"),
-                        "method": "baseline",
-                        "kb_name": kb_name,
-                        "params": {
-                            "buffer_size": buffer_size,
-                            "threshold_percentile": threshold_percentile,
-                            "top_k": top_k,
-                        },
-                        "metrics": {
-                            "avg_hit_rate": avg_hit_rate,
-                            "avg_mrr": avg_mrr,
-                            "avg_precision": avg_precision,
-                            "avg_recall": avg_recall,
-                        },
-                        "query_results": query_results,
-                    }
-                    with open(output_file, 'w', encoding='utf-8') as f:
-                        json.dump(evaluation_result, f, ensure_ascii=False, indent=2)
-                    logger.info(f"超参组合: buffer_size={buffer_size}, threshold_percentile={threshold_percentile}, top_k={top_k} 执行完成，输出路径: {output_file}")
+        for top_k in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]:
+            query_results, avg_precision, avg_recall, F1_score = run_retrieve_and_evaluate(
+                CHUNKS_DIR=CHUNKS_DIR,
+                kb_name=kb_name,
+                top_k=top_k
+            )
+
+            # Save Result
+            output_dir = str(os.path.join(settings.basic_settings.RESULTS_DIR))
+            os.makedirs(output_dir, exist_ok=True)
+            output_file = str(os.path.join(output_dir, f"baseline_b_1_p_90_K_{top_k}.json"))
+            evaluation_result = {
+                "timestamp": time.strftime("%m_%d_%H_%M"),
+                "model": "baseline",
+                "kb_name": kb_name,
+                "params": {
+                    "buffer_size": 1,
+                    "threshold_percentile": 90,
+                    "top_k": top_k,
+                },
+                "metrics": {
+                    "avg_precision": avg_precision,
+                    "avg_recall": avg_recall,
+                    "F1_score": F1_score,
+                },
+                "query_results": query_results,
+            }
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(evaluation_result, f, ensure_ascii=False, indent=2)
+            logger.info(f"超参组合: buffer_size={1}, threshold_percentile={90}, top_k={top_k} 执行完成，输出路径: {output_file}")
 
         logger.info("整个 RAG 流程执行完成！")
     except Exception as e:

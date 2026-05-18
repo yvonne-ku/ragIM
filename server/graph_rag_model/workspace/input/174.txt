@@ -1,0 +1,1 @@
+I'm testing the sound by a youtube video, if that matters. try a 'cat /proc/meminfo > /dev/dsp1' Yes, I heard a sound./ go back to System->Preferences->Sound and change all of them to the Headset if you can find it in the drop downs I see my headset, yes. Change everything to it? sure

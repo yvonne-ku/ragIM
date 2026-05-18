@@ -74,6 +74,7 @@ sentence-transformers = "^2.2.2"
 zai-sdk = "^0.2.2"
 igraph = "^0.11.8"
 leidenalg = "^0.10.2"
+pymongo = "^4.17.0"
 
 [tool.poetry.extras]
 xinference = ["xinference_client"]

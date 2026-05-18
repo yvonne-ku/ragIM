@@ -1,0 +1,1 @@
+i'm searching the forums to find where it's set hello, I am getting 30-60 % cpu usage while browsing in firefox, I am not watching any flash videos, just scrolling web pages, I am using cairo-dock session with compiz enabled, any suggestions ? try different browsers and see if you have the same issues

@@ -1,0 +1,1 @@
+ps? typing ps -e? please elaborate ;) typing ps -e|grep synaptic didn't return anything or what? I don't quite follow ps -e, where can I get the symbol next to e? the pipe? (|) us keyboard? well I have a danish keyboard. adaptr says it's usually above the enter key ;)

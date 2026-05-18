@@ -1,0 +1,1 @@
+you're welcome. I;m thinking about If I choose an older kernel at startup, can I update kernels from there? what's the contents of your /etc/kernel/postinst.d/nvidia-common http://paste.ubuntu.com/692367/

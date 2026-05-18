@@ -1,0 +1,1 @@
+Yes I can't mount the partitions, as it sees the MBR as being corrupt but I can see the drives in fdisk now

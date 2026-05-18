@@ -1,0 +1,1 @@
+No problem. I think there's an easier way to do it than that but I'm not sure. That's the manual way but it works :P manual way is fine, I don't like magic! :D Can you help me installing a new printer as Im having lots of problems with the HP  Photosmart D5460. Thks Do you know why when I type in sudo apt-get install amsn  it doesnt recognise the command strange?

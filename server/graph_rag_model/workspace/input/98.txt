@@ -1,0 +1,1 @@
+just wanted to say thanks for last night, i managed to fix most of my problems, which where obviously more complicated then i imagined... if you use a local DNS it will be much faster: http://embraceubuntu.com/2006/08/02/local-dns-cache-for-faster-browsing/ makes resolves take 0ms rather than 25ms

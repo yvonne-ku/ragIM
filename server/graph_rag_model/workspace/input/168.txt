@@ -1,0 +1,1 @@
+not yet give this a shot: http://linuxowns.wordpress.com/2008/07/08/how-i-got-my-usb-headset-to-work/ I tried that before I came here, but the second step didn't work. System->Preferences->Sound try 'sudo modprobe snd-usb-audio' I'm not sure which module your headset uses How do I find out?

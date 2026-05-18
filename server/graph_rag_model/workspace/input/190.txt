@@ -1,0 +1,1 @@
+yes ok sudo apt-get install xserver-xorg ok if this does not work try it as sudo aptitude reinstall xserver-xorg ok

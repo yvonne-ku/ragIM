@@ -1,0 +1,1 @@
+did you get any errors during the upgrade or experience any problems? what do you mean? Whenever I try to boot up I get 'kernel panic-not syncing:VFS:unable to mount root fs on unkown-block (0,0)' I guess that can be considered an erro etc. I don't recall any errors throught the installation. I was sleeping while it updated

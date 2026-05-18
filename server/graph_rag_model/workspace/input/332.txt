@@ -1,0 +1,1 @@
+You can install the mobile SDK by using CocoaPods, Carthage, or from the source directory. However, I am not aware of any particular limitations. I meant the issues that may arise when installing it with CocoaPods.

@@ -1,0 +1,1 @@
+make sure you add it to the TOP gotcha... about to save it now. Is there an easy way to restart things or should I just restart my computer? sudo /etc/init.d/dnsmasq restart this is Linux, not windows. restarts are rare ;) ya ya I know... just don't know the commands to restart all these things. :)

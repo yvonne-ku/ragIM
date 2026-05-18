@@ -1,0 +1,1 @@
+I was using Firefox, it became unresponsive, I forced quit, and then restarted system maybe try reinstalling those drivers and letting it create a new xorg.conf file for you okay, I have know problem getting rid of the xorg.conf and starting from scratch. would I use dpkg-reconfigure xserver-org for that honestly im not sure, thats probably what i would try

@@ -1,0 +1,1 @@
+yes yea thats definitely not firefox, you need to check ur xorg.conf or whatever you using to launch your window manager are you running Xgl or anything?

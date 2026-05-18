@@ -36,6 +36,7 @@ build/
 .env.local
 .env.*.local
 
+
 # --- 数据与向量存储（RAG 特有） ---
 # 原始文档目录（避免提交大文件）
 data/
@@ -69,5 +70,5 @@ Thumbs.db
 # 如果使用 Jupyter 检查点
 .ipynb_checkpoints/
 
-# 项目内文件
-
+# 工作目录
+workspace/

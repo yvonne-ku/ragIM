@@ -1,0 +1,1 @@
+yeah that is what I'm running currently if you boot with a live cd you still have the problem? I can't get a live CD to work which is why I had to use alternate cd because of my onboard graphics apparently it's a known bug with nvidia geforce 7300/nforce series with jaunty?

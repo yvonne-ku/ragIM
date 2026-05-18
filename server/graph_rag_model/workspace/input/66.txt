@@ -1,0 +1,1 @@
+so, for a deep clean, I should do both, not? well .. since the ionodes are gone .. you cant access teh files on a normal system ;) .. but there are tools for reading raw data from harddrives ;) yes

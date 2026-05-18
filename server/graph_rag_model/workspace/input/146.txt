@@ -1,0 +1,1 @@
+Ok, nice to know. No, I want to disable the use of original password login and only allow keys together with the key password prompt. I want to always have to use the password for my key, so that if the key is stolen or the laptop is stolen no one shall be able to login without the password. so on your laptop look for the /etc/X11/Xsession Yes, and then?

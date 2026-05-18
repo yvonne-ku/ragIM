@@ -1,0 +1,1 @@
+no problem! there are some problems with the later kernels and some Marvel IDE controllers Is there any way to get my cdrom working in ubuntu? I used an alternate cd now that I remember, it wasn't a minimal cd and it was text install, had to install xrssi to talk in chat and ubuntu-desktop package for GNOME dual boot?

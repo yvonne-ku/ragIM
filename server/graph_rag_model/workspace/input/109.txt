@@ -1,0 +1,1 @@
+ok. thanks can anyone help with Xorg eating up 100% and hanging my 10.10 desktop machine constantly? logging in remotely and running top shows 100% Xorg process nvidia graphics? yes its an ASUS EN210 with GeForce 210 chipset could be the nvidia driver causing this... you may want to try a different driver in the additional hardware  dialog I have already updated to latest drivers

@@ -1,0 +1,1 @@
+thanks again Hi is there some kind of application that mounts a remote file share by just putting in a username and password? nfs file systems for instance?

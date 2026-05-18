@@ -1,0 +1,1 @@
+are the digs taking 0ms ? just to make sure, I have two lines at the top of my resolve.conf file 1) Domain. sc.rr.com 2)Search sc.rr.com... then the nameserver lines. Do I put the 127.0.0.1 at the VERY top or just as the first nameserver at the very top of the file so that it IS the first nameserver gonna give it a shot

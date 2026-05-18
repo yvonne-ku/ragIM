@@ -1,0 +1,1 @@
+by posteing the workaround or what? yes it's really helpful to see how someone fixed a problem i dont know if that bug is for ubuntu 7.10 (2.6.20 is in older ubuntus?) Same here with kernel:

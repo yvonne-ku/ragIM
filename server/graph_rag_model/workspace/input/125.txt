@@ -1,0 +1,1 @@
+what Ok, to make it clear:                               For the client (school) I have to use this guide: http://oldsite.precedence.co.uk/nc/putty.html           and at the server (at home) this: https://help.ubuntu.com/10.10/serverguide/C/openssh-server.html When you don't tag my name in a post, I will not see it unless I'm watching the channel yes

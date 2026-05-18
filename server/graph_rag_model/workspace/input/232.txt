@@ -1,0 +1,1 @@
+thanks! i'm really weirded out, i switched to ttyUSB0, then ttyUSB2 and 3 appeared, so i changed to usb2, then it instantly worked... well, thanks again!

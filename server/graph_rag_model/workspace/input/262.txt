@@ -1,0 +1,1 @@
+thanks id you must run a scheduled script as root, edit root's crontab Anybody here use atheros wifi chipset? Anybody willing to help me get my atheros wifi cart working?  I have been reading docs and not having any luck. not working

@@ -1,0 +1,1 @@
+Alright what does `cat /proc/asound/cards` show you? It says no such file or directory.

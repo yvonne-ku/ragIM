@@ -1,0 +1,1 @@
+yeah now  in the console   export CC=/usr/bin/gcc-3.4   then   vmware-config   or whatever the script name is the reason you do this is because gcc-4 is the default compiler but the kernel and kernel modules need to be compiled with gcc-3.4 instead do i need to reebot before installing vmware?? no

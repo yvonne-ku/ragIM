@@ -1,0 +1,1 @@
+?* While it's at that screen you can press Ctrl+Alt+F1 to switch to virtual terminal 1. Then log-in to your account and use sudo vim /etc/X11/default-display-manager to manually set it back to lightdm thanks a lot!

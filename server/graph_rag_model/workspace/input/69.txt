@@ -1,0 +1,1 @@
+only for win32 I could wipe Linux's space from Windows? http://en.wikipedia.org/wiki/Inode read it just to make sure i remembered wrong since youre not savinganything on the harddrive ,) just delete the paritions .. create a ntfs if the iwnodws program required that :P and wipe it .. as long as its the same 'amount of space' it gets overwritten that is a good idea

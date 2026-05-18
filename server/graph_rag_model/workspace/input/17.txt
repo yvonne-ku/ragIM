@@ -1,0 +1,1 @@
+what was yer question? how do i set permissions so i can open pdfs on an external drive? the file or filesystem permissions?

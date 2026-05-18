@@ -1,0 +1,1 @@
+illmortal i typed this command: cat /proc/acpi/thermal_zone/THRM/temperature temperature:             40 C

@@ -1,0 +1,1 @@
+what are you doing exactly? starting chromium with dmenu, after immediatly exiting, trying firefox. Firefox started, I can even google, but can't go to any page after that. I get the same error message from both. To get the error message I started both from a terminal.

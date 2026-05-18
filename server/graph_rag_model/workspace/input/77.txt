@@ -1,0 +1,1 @@
+nothing hmm. but someone is logged into a gnome session on the same machine you ssh to? it means synaptic is not running this is the output. 30148 00:11:34 synaptic

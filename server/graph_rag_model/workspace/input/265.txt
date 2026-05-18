@@ -1,0 +1,1 @@
+its ':0' pastebin your crontab http://pastebin.com/m1b6c6c80 any ideas? this is tobias__'s crontab? does 'DISPLAY=:0 gedit' work? yes, it does

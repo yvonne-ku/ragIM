@@ -1,0 +1,1 @@
+select the drive first,  (I'm assuming the interface is the same as in ubuntu ) then find the partiton you need to resize and right click, should be self explanatory,  apply after each command is my recommendation any info on what the error is ? what FS is this partition you want to rezise ? xp 's ntfs or vista's ? XP

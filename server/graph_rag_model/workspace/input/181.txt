@@ -1,0 +1,1 @@
+do you know what card you have x800 its shows up as an x850 did you select the ati driver when you did the dpkg-reconfigure it auto fills the ati x850 you know how to use the pastebin?

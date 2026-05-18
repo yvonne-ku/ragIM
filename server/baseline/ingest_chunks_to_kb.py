@@ -24,19 +24,18 @@ def process_chunks_to_docs(json_path: str) -> List[Document]:
     # Global docs List
     docs = []
     for i, chunk in enumerate(chunks):
-        full_text = "\n".join([msg.get("text", "") for msg in chunk["messages"]])
+        full_text = chunk["concat_text"]
         doc = Document(
             page_content=full_text,
             metadata={
                 "chunk_id": chunk["chunk_id"],
-                "msg_count": len(chunk)
             }
         )
         docs.append(doc)
     print(f"Loaded {len(docs)} documents from {json_path} (Method: {method})")
     return docs
 
-def ingest_to_kb(json_path: str, kb_name: str, refresh_kb: bool = True):
+def ingest_to_kb(json_path: str, kb_name: str, refresh_kb: bool = True, batch_size: int = 8):
     """
     Ingest documents into a specific knowledge base.
     """
@@ -44,24 +43,34 @@ def ingest_to_kb(json_path: str, kb_name: str, refresh_kb: bool = True):
     if not docs:
         return
 
-    # 1. Get Singleton KB instance (Chromadb)
-    kb = get_kb(kb_name=kb_name)
-    
-    # 2. Clear existing collection for a fresh start (Optional)
-    kb.delete_collection()
-    print(f"Deleted existing collection: {kb_name}")
+    if refresh_kb:
+        # 1. Get Singleton KB instance (Chromadb)
+        kb = get_kb(kb_name=kb_name)
 
-    # 3. Add documents
-    print(f"Ingesting documents into {kb_name}...")
-    kb.add_documents(docs)
+        # 2. Clear existing collection for a fresh start (Optional)
+        kb.delete_collection()
+        print(f"Deleted existing collection: {kb_name}")
+
+        # 3. Add documents in batches to avoid memory issues
+        print(f"Ingesting documents into {kb_name}...")
+        total_docs = len(docs)
+        for i in range(0, total_docs, batch_size):
+            batch = docs[i:i+batch_size]
+            kb.add_documents(batch)
+            print(f"Ingested {min(i+batch_size, total_docs)}/{total_docs} documents...")
+
+    else:
+        kb = get_kb(kb_name=kb_name)
+        print(f"Use existing collection: {kb_name} Without Refresh Or Ingest")
+
     print("Ingestion completed.")
 
 
 if __name__ == "__main__":
     # Ingest Naive Baseline
     # For Only Ubuntu Dataset
-    ingest_to_kb(os.path.join(settings.basic_settings.CHUNKS_PATH, "ubuntu_naive_split.json"), "kb_ubuntu_naive")
+    ingest_to_kb(os.path.join(settings.basic_settings.CHUNKS_DIR, "ubuntu_naive_split.json"), "kb_ubuntu_naive")
     
     # Ingest Semantic Baseline
     # For Only Ubuntu Dataset
-    ingest_to_kb(os.path.join(settings.basic_settings.CHUNKS_PATH, "ubuntu_semantic_split.json"), "kb_ubuntu_semantic")
+    ingest_to_kb(os.path.join(settings.basic_settings.CHUNKS_DIR, "ubuntu_semantic_split.json"), "kb_ubuntu_semantic")

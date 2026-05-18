@@ -1,0 +1,1 @@
+I mean yw :) Back. I rebooted as you suggested, but still no cdrom what does it say if you run sudo modprobe ide_cd fron the cli? Module ide_cd not found dmesg | grep marvell

@@ -27,18 +27,20 @@ class BasicSettings(BaseSettings):
     """会根据该配置文件合并默认值生成项目代码的版本"""
 
     # 项目目录结构信息
+    SERVER_ROOT: Path = RAGIM_ROOT / "server"
     DATA_ROOT: Path = RAGIM_ROOT / "data"
-    OUTPUT_PATH: Path = DATA_ROOT / "outputs"
-    RESULTS_PATH: Path = DATA_ROOT / "results"
-    VS_PATH: Path = DATA_ROOT / "vector_store"
-    RAW_JSON_PATH: Path = DATA_ROOT / "raw_json_data"
-    CHUNKS_PATH: Path = DATA_ROOT / "processed_chunks"
+    RAW_JSON_PATH: Path = DATA_ROOT / "annotated_data" / "raw_data" / "raw_all.json"
+    QUERY_PATH: Path = DATA_ROOT / "annotated_data" / "query" / "queries.json"
+    CHUNKS_DIR: Path = DATA_ROOT / "chunk"
+    OUTPUT_DIR: Path = DATA_ROOT / "outputs"
+    RESULTS_DIR: Path = DATA_ROOT / "results"
+    VS_DIR: Path = DATA_ROOT / "vector_store"
     NLTK_DATA_PATH: Path = RAGIM_ROOT / "resources" / "nltk_data"    # NLTK 数据目录
     os.environ["NLTK_DATA"] = str(NLTK_DATA_PATH)
 
     def make_dirs(self):
         """初始化项目所有需要的目录"""
-        for path in [self.DATA_ROOT, self.OUTPUT_PATH, self.VS_PATH, self.RAW_JSON_PATH, self.CHUNKS_PATH, self.NLTK_DATA_PATH]:
+        for path in [self.DATA_ROOT, self.OUTPUT_DIR, self.VS_DIR, self.RAW_JSON_PATH, self.CHUNKS_DIR, self.NLTK_DATA_PATH]:
             if not os.path.exists(path):
                 os.makedirs(path)
 
@@ -224,18 +226,18 @@ class ApiModelSettings(BaseSettings):
     model_config = SettingsConfigDict(yaml_file=RAGIM_ROOT / "model_settings.yaml")
 
     DEFAULT_EMBEDDING_MODEL: str = "BAAI/bge-m3"
-    """默认选用的 Embedding 名称"""
+    """默认选用的 Embedding 模型名称"""
 
-    DEFAULT_EXTRACT_ENTITY_MODEL: str = "deepseek-chat"
+    DEFAULT_EXTRACT_ENTITY_MODEL: str = "glm-4"
     """默认选用的实体关系抽取模型"""
 
-    DEFAULT_SUMMARY_MODEL: str = "deepseek-chat"
+    DEFAULT_SUMMARY_MODEL: str = "glm-4"
     """默认选用的摘要模型"""
 
-    DEFAULT_EXTRACT_KEYWORDS_MODEL: str = "deepseek-chat"
+    DEFAULT_EXTRACT_KEYWORDS_MODEL: str = "glm-4"
     """默认选用的 query 关键词抽取模型"""
 
-    DEFAULT_LLM_MODEL: str = "glm-4-plus"
+    DEFAULT_LLM_MODEL: str = ""
     """默认选用的 LLM 名称"""
 
     MODEL_PLATFORMS: t.Dict[str, PlatformConfig] = {
@@ -267,30 +269,30 @@ class ApiModelSettings(BaseSettings):
             prompt_name="default",
             callbacks=False,
         ),
+        "embedding-3": ModelConfig(
+            model_name="embedding-3",
+            platform_name="zhipuai",
+            temperature=0.0,
+            max_tokens=4096,
+            history_len=0,
+            prompt_name="default",
+            callbacks=False,
+        ),
         "deepseek-chat": ModelConfig(
             model_name="deepseek-chat",
             platform_name="deepseek",
             temperature=0.0,
             max_tokens=4096,
-            history_len=10,
+            history_len=0,
             prompt_name="default",
             callbacks=True,
         ),
-        "GPT-4o-mini": ModelConfig(
-            model_name="GPT-4o-mini",
-            platform_name="openai",
+        "glm-4.7": ModelConfig(
+            model_name="glm-4.7",
+            platform_name="zhipuai",
             temperature=0.0,
             max_tokens=4096,
-            history_len=10,
-            prompt_name="default",
-            callbacks=True,
-        ),
-        "glm-4-plus": ModelConfig(
-            model_name="glm-4-plus",
-            platform_name="zhipuai",
-            temperature=0.7,
-            max_tokens=4096,
-            history_len=10,
+            history_len=0,
             prompt_name="default",
             callbacks=True,
         ),
@@ -332,6 +334,31 @@ class PromptSettings(BaseSettings):
             "### Input Data\n"
             "{conversation}\n"
         ),
+        "loose_extraction_for_more_entities_and_relations": (
+            "### Role\n"
+            "You are an expert Knowledge Graph Engineer specializing in extracting structured information from professional dialogues to support GraphRAG community detection.\n\n"
+            "### Task\n"
+            "Analyze the provided dialogue. Extract ALL meaningful entities and ALL possible relationships between them. Your goal is to build a dense, connected graph that accurately reflects the topics discussed.\n\n"
+            "### Extraction Guidelines\n"
+            "1. **Extract All Meaningful Entities**: Do not limit to only 'core' entities. Extract any noun phrase that represents a concept, organization, technology, regulation, metric, process, or object discussed in the dialogue.\n"
+            "2. **Ignore Only Purely Social Entities**: Do not extract 'User' or 'Agent' as entities. Ignore conversational filler words.\n"
+            "3. **Entity De-duplication**: Use consistent, standardized names. Use the full name on first mention, then the most common abbreviation.\n"
+            "4. **Extract All Relationships**: Extract ANY relationship between two entities that appear in the same context. This includes:\n"
+            "   - Strong logical relationships (causes, enables, mandates, contains)\n"
+            "   - Weak associative relationships (is related to, is discussed with, affects)\n"
+            "   - If two entities are mentioned in the same paragraph and you cannot identify a specific relationship, use 'is associated with' as the default.\n"
+            "5. **Cross-Sentence Relationships**: Extract relationships between entities that appear in different sentences but are clearly discussing the same topic.\n\n"
+            "### Output Format\n"
+            "Return ONLY a valid JSON object with the following structure. Do not include any explanations, markdown, or extra text outside the JSON:\n"
+            "{{\n"
+            "  \"entities\": [\"entity1\", \"entity2\", ...],\n"
+            "  \"relations\": [\n"
+            "    {{\"source\": \"entity1\", \"target\": \"entity2\", \"description\": \"brief description of the relationship\"}}\n"
+            "  ]\n"
+            "}}\n\n"
+            "### Input Data\n"
+            "{conversation}\n"
+        )
     }
     '''实体关系提取用模板，用于从对话中提取实体和关系'''
 

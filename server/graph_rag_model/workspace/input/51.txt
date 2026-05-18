@@ -1,0 +1,1 @@
+should I restart nor or what? I have never used this program before, try just restarting the GUI ( x ) by pressing ctrl+alt+backspace Did it work?

@@ -1,0 +1,1 @@
+where'd you get that mozilla-firefox from sid? ;) it's in Sid's pool i can get the .deb on the web? sure, but I'd wait a couple days. It'll probably be in Hoary within days. but...Hoary...isn't that unstable?

@@ -1,0 +1,1 @@
+what error? the export command will fix that type gcc-3.4 -v in a console is the last line gcc 3.4.5 .... http://paste.ubuntulinux.nl/3662

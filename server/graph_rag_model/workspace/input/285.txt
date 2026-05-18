@@ -1,0 +1,1 @@
+add noacpi noapic at the end if the safe option doesn't work Hi all. I'm having a problem opening chrome and firefox. Both exit with 'Inconsistency detected by ld.so: dl-open.c: 611: _dl_open: Assertion `_dl_debug_initialize (0, args.nsid)->r_state == RT_CONSISTENT' failed!' I'd like to rtfm... but.. well. Can anyone here help me?
